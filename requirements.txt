@@ -1,0 +1,17 @@
+# Core dependencies
+tweepy==4.14.0
+feedparser==6.0.10
+requests==2.31.0
+
+# Additional utilities
+python-dateutil==2.8.2
+urllib3==2.0.7
+
+# For better error handling and logging
+retrying==1.3.4
+
+# For JSON handling (usually built-in, but explicit for clarity)
+# json - built-in module
+
+# For environment variable management (optional)
+python-dotenv==1.0.0

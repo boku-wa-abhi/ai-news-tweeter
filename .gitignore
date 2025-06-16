@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# AI News Tweeter specific files
+.env
+tweet_log.txt
+posted_articles.json
+posted_tweets.json
+*.log
+
 # C extensions
 *.so
 
