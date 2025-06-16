@@ -21,6 +21,10 @@ class TweetFormatter:
         if not self.deepseek_api_key:
             logger.warning("DEEPSEEK_API_KEY not found in environment variables")
         
+        self.tinyurl_api_key = os.getenv('TINYURL_API_KEY')
+        if not self.tinyurl_api_key:
+            logger.warning("TINYURL_API_KEY not found in environment variables, using free TinyURL service")
+        
         self.deepseek_api_url = "https://api.deepseek.com/v1/chat/completions"
         
         # Common AI hashtags
@@ -57,10 +61,47 @@ class TweetFormatter:
         return relevant_tags[:3]  # Limit to 3 hashtags
     
     def _shorten_url(self, url: str) -> str:
-        """Simple URL shortening (in practice, you might use bit.ly or similar)"""
-        # For now, just return the original URL
-        # In production, you might want to integrate with URL shortening services
-        return url
+        """Shorten URL using TinyURL service to fixed length"""
+        try:
+            if self.tinyurl_api_key:
+                # Use authenticated TinyURL API for better reliability
+                tinyurl_api = "https://api.tinyurl.com/create"
+                headers = {
+                    'Authorization': f'Bearer {self.tinyurl_api_key}',
+                    'Content-Type': 'application/json'
+                }
+                data = {
+                    'url': url,
+                    'domain': 'tinyurl.com'  # Use default domain
+                }
+                
+                response = requests.post(tinyurl_api, headers=headers, json=data, timeout=10)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    short_url = result.get('data', {}).get('tiny_url', url)
+                    logger.info(f"Shortened URL with API: {url} -> {short_url}")
+                    return short_url
+                else:
+                    logger.warning(f"TinyURL API failed: {response.status_code}, falling back to free service")
+                    # Fall back to free service
+            
+            # Use free TinyURL service as fallback
+            tinyurl_api = "http://tinyurl.com/api-create.php"
+            response = requests.get(tinyurl_api, params={'url': url}, timeout=10)
+            
+            if response.status_code == 200:
+                short_url = response.text.strip()
+                # TinyURL typically returns URLs like "http://tinyurl.com/xxxxxx" (about 25-30 chars)
+                logger.info(f"Shortened URL with free service: {url} -> {short_url}")
+                return short_url
+            else:
+                logger.warning(f"URL shortening failed, using original URL")
+                return url
+                
+        except Exception as e:
+            logger.error(f"Error shortening URL: {e}")
+            return url
     
     def _summarize_with_deepseek(self, title: str, summary: str) -> Optional[str]:
         """Summarize article using DeepSeek API"""
@@ -170,11 +211,13 @@ Write only the summary text without quotes or formatting:"""
             # Shorten URL if needed
             short_url = self._shorten_url(url)
             
-            # Calculate available space for summary with more conservative approach
-            # Twitter limit: 280 characters
+            # Calculate available space for summary with 250 character limit
+            # Custom limit: 250 characters (stricter than Twitter's 280)
             # Reserve space for: hashtags + URL + spaces and newlines + buffer
-            reserved_space = len(hashtag_text) + len(short_url) + 6  # 6 for spaces, newlines, and buffer
-            available_space = 280 - reserved_space
+            # Assume max 30 chars for shortened URL for calculation
+            url_space = max(len(short_url), 30)  # Reserve at least 30 chars for URL
+            reserved_space = len(hashtag_text) + url_space + 6  # 6 for spaces, newlines, and buffer
+            available_space = 250 - reserved_space
             
             # Ensure we have enough space for a meaningful summary
             if available_space < 50:
@@ -214,11 +257,11 @@ Write only the summary text without quotes or formatting:"""
             # Format final tweet
             tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
             
-            # Final safety check
-            if len(tweet) > 280:
+            # Final safety check for 250 character limit
+            if len(tweet) > 250:
                 logger.warning(f"Tweet still too long ({len(tweet)} chars), applying final truncation...")
                 # Calculate exact excess and remove from summary
-                excess = len(tweet) - 280
+                excess = len(tweet) - 250
                 if len(ai_summary) > excess + 5:
                     # Truncate summary and ensure it ends properly
                     new_summary = ai_summary[:-(excess + 5)]
@@ -235,12 +278,12 @@ Write only the summary text without quotes or formatting:"""
             return None
     
     def validate_tweet(self, tweet: str) -> bool:
-        """Validate tweet format and length"""
+        """Validate tweet format and length (250 char limit)"""
         if not tweet:
             return False
         
-        if len(tweet) > 280:
-            logger.error(f"Tweet too long: {len(tweet)} characters")
+        if len(tweet) > 250:
+            logger.error(f"Tweet too long: {len(tweet)} characters (limit: 250)")
             return False
         
         # Check if tweet contains URL
@@ -248,4 +291,5 @@ Write only the summary text without quotes or formatting:"""
             logger.warning("Tweet doesn't contain URL")
             return False
         
+        logger.info(f"Tweet validated: {len(tweet)} characters")
         return True

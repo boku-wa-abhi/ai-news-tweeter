@@ -61,6 +61,12 @@ You'll need to obtain API keys from:
    - `TWITTER_ACCESS_TOKEN`
    - `TWITTER_ACCESS_SECRET`
 
+#### TinyURL API (Optional)
+1. Visit [TinyURL API](https://tinyurl.com/app/dev)
+2. Create an account and generate an API key
+3. Note down your `TINYURL_API_KEY`
+4. If not provided, the system will use the free TinyURL service
+
 ### 4. Configure GitHub Secrets
 
 In your GitHub repository, go to Settings → Secrets and Variables → Actions, and add:
@@ -70,6 +76,7 @@ In your GitHub repository, go to Settings → Secrets and Variables → Actions,
 - `TWITTER_CONSUMER_SECRET`
 - `TWITTER_ACCESS_TOKEN`
 - `TWITTER_ACCESS_SECRET`
+- `TINYURL_API_KEY` (optional)
 
 ### 5. Local Testing (Optional)
 
@@ -77,6 +84,7 @@ For local testing, create a `.env` file:
 
 ```bash
 DEEPSEEK_API_KEY=your_deepseek_api_key
+TINYURL_API_KEY=your_tinyurl_api_key
 TWITTER_CONSUMER_KEY=your_twitter_consumer_key
 TWITTER_CONSUMER_SECRET=your_twitter_consumer_secret
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
