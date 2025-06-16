@@ -75,13 +75,14 @@ class TweetFormatter:
             }
             
             prompt = f"""
-Summarize this AI/tech news article in 1-2 engaging sentences suitable for Twitter. 
-Focus on the key innovation or development. Keep it concise and interesting.
+Create a compelling Twitter summary of this AI/tech news in 1-2 complete sentences. 
+Make it engaging and informative. Do not use quotes, markdown, or any formatting. 
+Just provide clean, readable text that captures the key innovation or development.
 
 Title: {title}
-Summary: {summary[:500]}  # Limit summary length
+Summary: {summary[:500]}
 
-Provide only the summary, no additional text:"""
+Write only the summary text without quotes or formatting:"""
             
             data = {
                 "model": "deepseek-chat",
@@ -124,21 +125,22 @@ Provide only the summary, no additional text:"""
         if not summary_text:
             return summary_text
         
-        # Remove leading and trailing quotes (both single and double)
+        # Remove leading and trailing whitespace
         summary_text = summary_text.strip()
-        if (summary_text.startswith('"') and summary_text.endswith('"')) or \
-           (summary_text.startswith("'") and summary_text.endswith("'")):
-            summary_text = summary_text[1:-1].strip()
         
-        # Remove any remaining leading quotes at the beginning
-        while summary_text.startswith('"') or summary_text.startswith("'"):
+        # Remove leading quotes (both single and double)
+        while summary_text and (summary_text.startswith('"') or summary_text.startswith("'")):
             summary_text = summary_text[1:].strip()
         
-        # Remove any trailing quotes at the end
-        while summary_text.endswith('"') or summary_text.endswith("'"):
+        # Remove trailing quotes (both single and double)
+        while summary_text and (summary_text.endswith('"') or summary_text.endswith("'")):
             summary_text = summary_text[:-1].strip()
         
-        return summary_text
+        # Remove any markdown formatting that might have been added
+        summary_text = re.sub(r'^\*\*|\*\*$', '', summary_text)  # Remove bold markdown
+        summary_text = re.sub(r'^\*|\*$', '', summary_text)      # Remove italic markdown
+        
+        return summary_text.strip()
     
     def _fallback_summarize(self, title: str, summary: str) -> str:
         """Fallback summarization when API is not available"""
@@ -170,24 +172,48 @@ Provide only the summary, no additional text:"""
             
             # Calculate available space for summary
             # Twitter limit: 280 characters
-            # Reserve space for: hashtags + URL + spaces
+            # Reserve space for: hashtags + URL + spaces and newlines
             reserved_space = len(hashtag_text) + len(short_url) + 4  # 4 for spaces and newlines
             available_space = 280 - reserved_space
             
-            # Truncate summary if needed
+            # Smart truncation to ensure complete sentences
             if len(ai_summary) > available_space:
-                ai_summary = ai_summary[:available_space-3] + '...'
+                # Try to truncate at sentence boundaries first
+                truncated = ai_summary[:available_space-3]
+                
+                # Find the last complete sentence
+                last_period = truncated.rfind('.')
+                last_exclamation = truncated.rfind('!')
+                last_question = truncated.rfind('?')
+                
+                # Use the latest sentence ending
+                last_sentence_end = max(last_period, last_exclamation, last_question)
+                
+                if last_sentence_end > len(truncated) * 0.6:  # If we can keep at least 60% of content
+                    ai_summary = truncated[:last_sentence_end + 1]
+                else:
+                    # If no good sentence break, truncate at word boundary
+                    words = truncated.split()
+                    if len(words) > 1:
+                        ai_summary = ' '.join(words[:-1]) + '...'
+                    else:
+                        ai_summary = truncated + '...'
             
             # Format final tweet
             tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
             
-            # Verify tweet length
+            # Final length check and emergency truncation
             if len(tweet) > 280:
-                logger.warning(f"Tweet too long ({len(tweet)} chars), truncating...")
-                # Emergency truncation
+                logger.warning(f"Tweet still too long ({len(tweet)} chars), applying emergency truncation...")
                 excess = len(tweet) - 280
-                ai_summary = ai_summary[:-excess-3] + '...'
-                tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
+                if len(ai_summary) > excess + 3:
+                    ai_summary = ai_summary[:-(excess + 3)] + '...'
+                    tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
+                else:
+                    # If still too long, reduce hashtags
+                    hashtags = hashtags[:2]  # Keep only 2 hashtags
+                    hashtag_text = ' '.join(hashtags)
+                    tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
             
             logger.info(f"Formatted tweet ({len(tweet)} chars): {tweet[:50]}...")
             return tweet
