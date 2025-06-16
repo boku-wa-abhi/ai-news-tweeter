@@ -154,15 +154,14 @@ class NewsFetcher:
         
         unique_articles.sort(key=score_article, reverse=True)
         
-        # Return top articles up to limit
+        # Return top articles up to limit (don't mark as posted yet)
         top_articles = unique_articles[:limit]
-        
-        # Mark these articles as posted
-        for article in top_articles:
-            self.posted_articles.add(article['url'])
-        
-        # Save updated posted articles
-        self._save_posted_articles()
         
         logger.info(f"Found {len(top_articles)} articles to tweet")
         return top_articles
+    
+    def mark_article_as_posted(self, article_url: str):
+        """Mark a specific article as posted after successful tweet"""
+        self.posted_articles.add(article_url)
+        self._save_posted_articles()
+        logger.info(f"Marked article as posted: {article_url}")

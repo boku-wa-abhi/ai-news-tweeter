@@ -170,49 +170,61 @@ Write only the summary text without quotes or formatting:"""
             # Shorten URL if needed
             short_url = self._shorten_url(url)
             
-            # Calculate available space for summary
+            # Calculate available space for summary with more conservative approach
             # Twitter limit: 280 characters
-            # Reserve space for: hashtags + URL + spaces and newlines
-            reserved_space = len(hashtag_text) + len(short_url) + 4  # 4 for spaces and newlines
+            # Reserve space for: hashtags + URL + spaces and newlines + buffer
+            reserved_space = len(hashtag_text) + len(short_url) + 6  # 6 for spaces, newlines, and buffer
             available_space = 280 - reserved_space
+            
+            # Ensure we have enough space for a meaningful summary
+            if available_space < 50:
+                # Reduce hashtags if space is too tight
+                hashtags = hashtags[:2]
+                hashtag_text = ' '.join(hashtags)
+                reserved_space = len(hashtag_text) + len(short_url) + 6
+                available_space = 280 - reserved_space
             
             # Smart truncation to ensure complete sentences
             if len(ai_summary) > available_space:
-                # Try to truncate at sentence boundaries first
-                truncated = ai_summary[:available_space-3]
+                # First, try to find a good sentence break
+                target_length = available_space - 10  # Leave some buffer
                 
-                # Find the last complete sentence
-                last_period = truncated.rfind('.')
-                last_exclamation = truncated.rfind('!')
-                last_question = truncated.rfind('?')
+                # Find sentence boundaries within reasonable range
+                sentence_endings = []
+                for i, char in enumerate(ai_summary):
+                    if char in '.!?' and i < target_length:
+                        sentence_endings.append(i)
                 
-                # Use the latest sentence ending
-                last_sentence_end = max(last_period, last_exclamation, last_question)
-                
-                if last_sentence_end > len(truncated) * 0.6:  # If we can keep at least 60% of content
-                    ai_summary = truncated[:last_sentence_end + 1]
+                if sentence_endings:
+                    # Use the last complete sentence that fits
+                    last_sentence_end = max(sentence_endings)
+                    ai_summary = ai_summary[:last_sentence_end + 1]
                 else:
-                    # If no good sentence break, truncate at word boundary
-                    words = truncated.split()
+                    # No good sentence break found, truncate at word boundary
+                    words = ai_summary[:target_length].split()
                     if len(words) > 1:
-                        ai_summary = ' '.join(words[:-1]) + '...'
+                        # Remove the last word which might be incomplete
+                        ai_summary = ' '.join(words[:-1])
+                        # Add proper ending
+                        if not ai_summary.endswith(('.', '!', '?')):
+                            ai_summary += '.'
                     else:
-                        ai_summary = truncated + '...'
+                        ai_summary = ai_summary[:target_length] + '.'
             
             # Format final tweet
             tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
             
-            # Final length check and emergency truncation
+            # Final safety check
             if len(tweet) > 280:
-                logger.warning(f"Tweet still too long ({len(tweet)} chars), applying emergency truncation...")
+                logger.warning(f"Tweet still too long ({len(tweet)} chars), applying final truncation...")
+                # Calculate exact excess and remove from summary
                 excess = len(tweet) - 280
-                if len(ai_summary) > excess + 3:
-                    ai_summary = ai_summary[:-(excess + 3)] + '...'
-                    tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
-                else:
-                    # If still too long, reduce hashtags
-                    hashtags = hashtags[:2]  # Keep only 2 hashtags
-                    hashtag_text = ' '.join(hashtags)
+                if len(ai_summary) > excess + 5:
+                    # Truncate summary and ensure it ends properly
+                    new_summary = ai_summary[:-(excess + 5)]
+                    if not new_summary.endswith(('.', '!', '?')):
+                        new_summary += '.'
+                    ai_summary = new_summary
                     tweet = f"{ai_summary}\n\n{hashtag_text}\n{short_url}"
             
             logger.info(f"Formatted tweet ({len(tweet)} chars): {tweet[:50]}...")

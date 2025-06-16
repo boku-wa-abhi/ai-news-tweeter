@@ -63,8 +63,11 @@ def main():
                 
                 if success:
                     logger.info(f"Successfully posted tweet {i}")
+                    # Mark article as posted only after successful tweet
+                    news_fetcher.mark_article_as_posted(article['url'])
                 else:
                     logger.error(f"Failed to post tweet {i}")
+                    # Don't mark as posted if tweet failed, so it can be retried later
                     
             except Exception as e:
                 logger.error(f"Error processing article {i}: {str(e)}")
