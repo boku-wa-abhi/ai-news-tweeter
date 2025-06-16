@@ -106,6 +106,8 @@ Provide only the summary, no additional text:"""
                 result = response.json()
                 if 'choices' in result and len(result['choices']) > 0:
                     summary_text = result['choices'][0]['message']['content'].strip()
+                    # Clean up the summary by removing quotes and extra formatting
+                    summary_text = self._clean_summary(summary_text)
                     logger.info("Successfully generated summary using DeepSeek API")
                     return summary_text
             else:
@@ -116,6 +118,27 @@ Provide only the summary, no additional text:"""
         
         # Fallback to simple summarization
         return self._fallback_summarize(title, summary)
+    
+    def _clean_summary(self, summary_text: str) -> str:
+        """Clean up AI-generated summary by removing unwanted formatting"""
+        if not summary_text:
+            return summary_text
+        
+        # Remove leading and trailing quotes (both single and double)
+        summary_text = summary_text.strip()
+        if (summary_text.startswith('"') and summary_text.endswith('"')) or \
+           (summary_text.startswith("'") and summary_text.endswith("'")):
+            summary_text = summary_text[1:-1].strip()
+        
+        # Remove any remaining leading quotes at the beginning
+        while summary_text.startswith('"') or summary_text.startswith("'"):
+            summary_text = summary_text[1:].strip()
+        
+        # Remove any trailing quotes at the end
+        while summary_text.endswith('"') or summary_text.endswith("'"):
+            summary_text = summary_text[:-1].strip()
+        
+        return summary_text
     
     def _fallback_summarize(self, title: str, summary: str) -> str:
         """Fallback summarization when API is not available"""
