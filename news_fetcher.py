@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """News Fetcher Module
-Fetches latest AI/LLM news from major financial and tech news sources via Google News RSS feeds
-"""
+Fetches latest tech news from WSJ and Reuters by scraping their tech pages directly"""
 
-import feedparser
 import requests
 import logging
 import json
 import os
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
+import re
+import feedparser
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +30,17 @@ class NewsFetcher:
             'digital transformation', 'AI investment', 'AI startup', 'AI regulation'
         ]
         
-        # RSS feeds for AI topics from WSJ and Reuters only
-        self.rss_feeds = [
+        # Tech RSS feeds (fallback approach since direct scraping may be blocked)
+        self.tech_feeds = [
             {
-                'name': 'Reuters - AI News',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:reuters.com&hl=en-US&gl=US&ceid=US:en'
+                'name': 'WSJ Technology',
+                'url': 'https://feeds.a.dj.com/rss/RSSWSJD.xml',
+                'base_url': 'https://www.wsj.com'
             },
             {
-                'name': 'Wall Street Journal - AI News',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:wsj.com&hl=en-US&gl=US&ceid=US:en'
+                'name': 'Reuters Technology', 
+                'url': 'https://www.reuters.com/technology/',
+                'base_url': 'https://www.reuters.com'
             }
         ]
         
@@ -68,10 +71,10 @@ class NewsFetcher:
         except Exception as e:
             logger.error(f"Could not save posted articles: {e}")
     
-    def _is_ai_related(self, title: str, summary: str = '') -> bool:
-        """Check if article is AI-related based on keywords"""
-        text = f"{title} {summary}".lower()
-        return any(keyword.lower() in text for keyword in self.ai_keywords)
+    def _is_ai_related(self, title: str, summary: str = "") -> bool:
+        """Check if article is AI/tech-related based on keywords"""
+        text_to_check = f"{title} {summary}".lower()
+        return any(keyword in text_to_check for keyword in self.ai_keywords)
     
     def _shorten_url_with_tinyurl(self, url: str) -> str:
         """Shorten URL using TinyURL authenticated API service"""
@@ -136,62 +139,191 @@ class NewsFetcher:
         logger.debug(f"Using original URL: {url[:100]}...")
         return url
     
-    def _fetch_from_rss(self, feed_info: Dict) -> List[Dict]:
-        """Fetch articles from a single RSS feed"""
+    def _scrape_reuters_tech(self, page_info: Dict) -> List[Dict]:
+        """Scrape articles from Reuters technology page"""
         articles = []
         try:
-            logger.info(f"Fetching from {feed_info['name']}...")
+            logger.info(f"Scraping from {page_info['name']}...")
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(page_info['url'], headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Find article links on Reuters tech page
+            article_links = soup.find_all('a', {'data-testid': 'Heading'})
+            
+            for link in article_links[:5]:  # Limit to top 5 articles
+                try:
+                    title = link.get_text().strip()
+                    relative_url = link.get('href', '')
+                    
+                    if not relative_url:
+                        continue
+                        
+                    # Construct full URL
+                    if relative_url.startswith('/'):
+                        full_url = page_info['base_url'] + relative_url
+                    else:
+                        full_url = relative_url
+                    
+                    # Skip if already posted
+                    if full_url in self.posted_articles:
+                        continue
+                    
+                    # Shorten URL using TinyURL
+                    short_url = self._shorten_url_with_tinyurl(full_url)
+                    
+                    # Skip if shortened URL already posted
+                    if short_url in self.posted_articles:
+                        continue
+                    
+                    # Check if tech/AI-related
+                    if self._is_ai_related(title):
+                        articles.append({
+                            'title': title,
+                            'url': short_url,
+                            'original_url': full_url,
+                            'summary': '',  # Reuters doesn't provide summary on listing page
+                            'source': page_info['name'],
+                            'published': datetime.now().isoformat()
+                        })
+                        
+                except Exception as e:
+                    logger.warning(f"Error processing Reuters article: {e}")
+                    continue
+                    
+        except Exception as e:
+            logger.error(f"Error scraping from {page_info['name']}: {e}")
+        
+        return articles
+    
+    def _scrape_wsj_tech(self, page_info: Dict) -> List[Dict]:
+        """Scrape articles from WSJ technology page"""
+        articles = []
+        try:
+            logger.info(f"Scraping from {page_info['name']}...")
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(page_info['url'], headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Find article links on WSJ tech page
+            article_links = soup.find_all('a', class_=re.compile(r'.*headline.*|.*title.*'))
+            
+            for link in article_links[:5]:  # Limit to top 5 articles
+                try:
+                    title = link.get_text().strip()
+                    relative_url = link.get('href', '')
+                    
+                    if not relative_url or not title:
+                        continue
+                        
+                    # Construct full URL
+                    if relative_url.startswith('/'):
+                        full_url = page_info['base_url'] + relative_url
+                    else:
+                        full_url = relative_url
+                    
+                    # Skip if already posted
+                    if full_url in self.posted_articles:
+                        continue
+                    
+                    # Shorten URL using TinyURL
+                    short_url = self._shorten_url_with_tinyurl(full_url)
+                    
+                    # Skip if shortened URL already posted
+                    if short_url in self.posted_articles:
+                        continue
+                    
+                    # Check if tech/AI-related
+                    if self._is_ai_related(title):
+                        articles.append({
+                            'title': title,
+                            'url': short_url,
+                            'original_url': full_url,
+                            'summary': '',  # WSJ doesn't provide summary on listing page
+                            'source': page_info['name'],
+                            'published': datetime.now().isoformat()
+                        })
+                        
+                except Exception as e:
+                    logger.warning(f"Error processing WSJ article: {e}")
+                    continue
+                    
+        except Exception as e:
+            logger.error(f"Error scraping from {page_info['name']}: {e}")
+        
+        return articles
+    
+    def _fetch_from_rss(self, feed_info: Dict) -> List[Dict]:
+        """Fetch articles from RSS feed"""
+        articles = []
+        try:
+            logger.info(f"Fetching from {feed_info['name']} RSS...")
             feed = feedparser.parse(feed_info['url'])
             
             if feed.bozo:
                 logger.warning(f"RSS feed parsing warning for {feed_info['name']}: {feed.bozo_exception}")
             
             for entry in feed.entries[:10]:  # Limit to recent entries
-                # Check if article is recent (within last 3 days)
-                try:
-                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                        pub_date = datetime(*entry.published_parsed[:6])
-                        if (datetime.now() - pub_date).days > 3:
-                            continue
-                except:
-                    pass  # If date parsing fails, include the article
-                
                 title = entry.get('title', '').strip()
                 original_url = entry.get('link', '').strip()
                 summary = entry.get('summary', '').strip()
                 
-                # Shorten URL using TinyURL
-                logger.info(f"Original URL length: {len(original_url)} chars")
-                short_url = self._shorten_url_with_tinyurl(original_url)
-                logger.info(f"Shortened URL length: {len(short_url)} chars")
-                
-                # Skip if already posted (check both original and shortened URL)
-                if original_url in self.posted_articles or short_url in self.posted_articles:
+                # Skip if already posted
+                if original_url in self.posted_articles:
                     continue
                 
-                # Check if AI-related
+                # Shorten URL using TinyURL
+                short_url = self._shorten_url_with_tinyurl(original_url)
+                
+                # Skip if shortened URL already posted
+                if short_url in self.posted_articles:
+                    continue
+                
+                # Check if tech/AI-related
                 if self._is_ai_related(title, summary):
                     articles.append({
                         'title': title,
-                        'url': short_url,  # Use the shortened URL
-                        'original_url': original_url,  # Keep original for reference
+                        'url': short_url,
+                        'original_url': original_url,
                         'summary': summary,
                         'source': feed_info['name'],
-                        'published': entry.get('published', '')
+                        'published': entry.get('published', datetime.now().isoformat())
                     })
-            
+                    
         except Exception as e:
-            logger.error(f"Error fetching from {feed_info['name']}: {e}")
+            logger.error(f"Error fetching from {feed_info['name']} RSS: {e}")
         
         return articles
     
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
-        """Fetch top AI articles from Google News across major financial and tech news sources"""
+        """Fetch top tech articles using RSS feeds and web scraping"""
         all_articles = []
         
-        # Fetch from all RSS feeds
-        for feed_info in self.rss_feeds:
-            articles = self._fetch_from_rss(feed_info)
+        # Fetch from tech feeds
+        for feed_info in self.tech_feeds:
+            if 'reuters' in feed_info['url'].lower():
+                # Try scraping Reuters first, fallback to RSS if needed
+                articles = self._scrape_reuters_tech(feed_info)
+                if not articles:
+                    logger.info("Reuters scraping failed, trying RSS fallback...")
+                    # Could add RSS fallback here if needed
+            elif 'wsj' in feed_info['name'].lower():
+                # Use RSS for WSJ since scraping is blocked
+                articles = self._fetch_from_rss(feed_info)
+            else:
+                continue
             all_articles.extend(articles)
         
         # Remove duplicates based on URL
