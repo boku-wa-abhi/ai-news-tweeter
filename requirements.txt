@@ -2,6 +2,7 @@
 tweepy==4.14.0
 beautifulsoup4==4.12.2
 requests==2.31.0
+feedparser==6.0.10
 
 # Additional utilities
 python-dateutil==2.8.2
