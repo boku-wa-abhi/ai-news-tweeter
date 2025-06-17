@@ -74,23 +74,56 @@ class NewsFetcher:
         return any(keyword.lower() in text for keyword in self.ai_keywords)
     
     def _shorten_url_with_tinyurl(self, url: str) -> str:
-        """Shorten URL using TinyURL service"""
+        """Shorten URL using TinyURL authenticated API service"""
         try:
             logger.debug(f"Shortening URL with TinyURL: {url[:100]}...")
             
-            # TinyURL API endpoint
-            tinyurl_api = "http://tinyurl.com/api-create.php"
+            # Get TinyURL API token from environment
+            api_token = os.getenv('TINYURL_API_TOKEN')
+            if not api_token:
+                logger.warning("TinyURL API token not found, falling back to free endpoint")
+                # Fallback to free endpoint
+                tinyurl_api = "http://tinyurl.com/api-create.php"
+                response = requests.get(tinyurl_api, params={'url': url}, timeout=10)
+                
+                if response.status_code == 200:
+                    short_url = response.text.strip()
+                    if short_url.startswith('http'):
+                        logger.info(f"Successfully shortened URL (free): {short_url} (length: {len(short_url)})")
+                        return short_url
+                return url
             
-            # Make request to TinyURL
-            response = requests.get(tinyurl_api, params={'url': url}, timeout=10)
+            # Use authenticated TinyURL API
+            headers = {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
+            params = {
+                'api_token': api_token
+            }
+            
+            json_data = {
+                'url': url,
+                'domain': 'tinyurl.com'  # Use default domain
+            }
+            
+            response = requests.post(
+                'https://api.tinyurl.com/create',
+                params=params,
+                headers=headers,
+                json=json_data,
+                timeout=10
+            )
             
             if response.status_code == 200:
-                short_url = response.text.strip()
-                if short_url.startswith('http'):
+                result = response.json()
+                if 'data' in result and 'tiny_url' in result['data']:
+                    short_url = result['data']['tiny_url']
                     logger.info(f"Successfully shortened URL: {short_url} (length: {len(short_url)})")
                     return short_url
                 else:
-                    logger.warning(f"TinyURL returned unexpected response: {short_url}")
+                    logger.warning(f"TinyURL API returned unexpected response: {result}")
             else:
                 logger.warning(f"TinyURL API returned status code: {response.status_code}")
                 
