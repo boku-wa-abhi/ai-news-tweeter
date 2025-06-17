@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""
-News Fetcher Module
-Fetches latest AI/LLM news from various reputable sources
+"""News Fetcher Module
+Fetches latest AI/LLM news from major financial and tech news sources via Google News RSS feeds
 """
 
 import feedparser
@@ -23,34 +22,54 @@ class NewsFetcher:
             'AI', 'artificial intelligence', 'LLM', 'large language model',
             'ChatGPT', 'GPT-4', 'GPT-5', 'Anthropic', 'Claude', 'Transformer',
             'OpenAI', 'machine learning', 'deep learning', 'neural network',
-            'Hugging Face', 'Gemini', 'Bard', 'LLaMA', 'Mistral', 'DeepSeek'
+            'Hugging Face', 'Gemini', 'Bard', 'LLaMA', 'Mistral', 'DeepSeek',
+            'automation', 'robotics', 'computer vision', 'natural language processing',
+            'NLP', 'generative AI', 'AGI', 'artificial general intelligence',
+            'algorithm', 'data science', 'predictive analytics', 'tech innovation',
+            'digital transformation', 'AI investment', 'AI startup', 'AI regulation'
         ]
         
-        # RSS feeds from reputable AI news sources
+        # Google News RSS feeds for AI topics from major financial and tech news sources
         self.rss_feeds = [
             {
-                'name': 'The Verge AI',
-                'url': 'https://www.theverge.com/ai-artificial-intelligence/rss/index.xml'
+                'name': 'Google News - AI (Reuters)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:reuters.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'TechCrunch AI',
-                'url': 'https://techcrunch.com/category/artificial-intelligence/feed/'
+                'name': 'Google News - AI (Bloomberg)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:bloomberg.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'MIT Technology Review AI',
-                'url': 'https://www.technologyreview.com/topic/artificial-intelligence/feed/'
+                'name': 'Google News - AI (Wall Street Journal)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:wsj.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'OpenAI Blog',
-                'url': 'https://openai.com/blog/rss.xml'
+                'name': 'Google News - AI (Financial Times)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:ft.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'Hugging Face Blog',
-                'url': 'https://huggingface.co/blog/feed.xml'
+                'name': 'Google News - AI (Nikkei)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:asia.nikkei.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'Anthropic News',
-                'url': 'https://www.anthropic.com/news/rss.xml'
+                'name': 'Google News - AI (TechCrunch)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:techcrunch.com&hl=en-US&gl=US&ceid=US:en'
+            },
+            {
+                'name': 'Google News - AI (The Verge)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:theverge.com&hl=en-US&gl=US&ceid=US:en'
+            },
+            {
+                'name': 'Google News - AI (CNBC)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:cnbc.com&hl=en-US&gl=US&ceid=US:en'
+            },
+            {
+                'name': 'Google News - AI (BBC Technology)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:bbc.com&hl=en-US&gl=US&ceid=US:en'
+            },
+            {
+                'name': 'Google News - AI (Associated Press)',
+                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:apnews.com&hl=en-US&gl=US&ceid=US:en'
             }
         ]
         
@@ -130,7 +149,7 @@ class NewsFetcher:
         return articles
     
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
-        """Fetch top AI articles from all sources"""
+        """Fetch top AI articles from Google News across major financial and tech news sources"""
         all_articles = []
         
         # Fetch from all RSS feeds

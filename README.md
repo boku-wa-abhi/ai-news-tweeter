@@ -99,21 +99,27 @@ python main.py
 
 ## 🔄 How It Works
 
-1. **News Fetching**: Scans RSS feeds from major AI news sources
-2. **Content Filtering**: Identifies AI/LLM-related articles using keyword matching
+1. **News Fetching**: Uses Google News RSS feeds to scan AI articles from major financial and tech news sources
+2. **Content Filtering**: Identifies AI/LLM-related articles using comprehensive keyword matching
 3. **Deduplication**: Checks against previously posted articles
 4. **Summarization**: Uses DeepSeek API to create engaging summaries
-5. **Tweet Formatting**: Formats content with hashtags and ensures ≤280 characters
+5. **Tweet Formatting**: Formats content with hashtags and ensures ≤250 characters
 6. **Publishing**: Posts tweets to Twitter and logs the activity
 
 ## 📊 News Sources
 
-- **The Verge AI**: Latest AI coverage from The Verge
-- **TechCrunch AI**: AI category from TechCrunch
-- **MIT Technology Review**: AI section
-- **OpenAI Blog**: Official OpenAI announcements
-- **Hugging Face Blog**: ML/AI developments
-- **Anthropic News**: Updates from Anthropic
+The system fetches AI news via Google News RSS feeds from these major sources:
+
+- **Reuters**: Global financial and business news
+- **Bloomberg**: Financial markets and business intelligence
+- **Wall Street Journal**: Business and financial journalism
+- **Financial Times**: International business news
+- **Nikkei**: Asian business and technology news
+- **TechCrunch**: Technology startup and innovation news
+- **The Verge**: Technology and digital culture
+- **CNBC**: Business news and market analysis
+- **BBC Technology**: Technology section from BBC News
+- **Associated Press**: Global news wire service
 
 ## 🤖 Automation Schedule
 
