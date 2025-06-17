@@ -39,10 +39,10 @@ The application supports two modes:
    cp .env.example .env
    ```
 
-2. Edit the `.env` file and add your TinyURL API token:
+2. Edit the `.env` file and add your TinyURL API key:
    ```env
    # TinyURL API Configuration (Required for URL shortening)
-   TINYURL_API_TOKEN=your_actual_tinyurl_api_token_here
+   TINYURL_API_KEY=your_actual_tinyurl_api_key_here
    ```
 
 ### Step 3: Test the Integration
@@ -59,7 +59,7 @@ You should see output showing:
 
 ## Fallback Behavior
 
-If no TinyURL API token is provided:
+If no TinyURL API key is provided:
 1. The application will log a warning
 2. It will automatically fall back to the free TinyURL endpoint
 3. URL shortening will still work, but with limitations
@@ -79,12 +79,12 @@ If no TinyURL API token is provided:
 
 ### Common Issues
 
-1. **"TinyURL API token not found" warning**
-   - Solution: Add `TINYURL_API_TOKEN` to your `.env` file
+1. **"TinyURL API key not found" warning**
+   - Solution: Add `TINYURL_API_KEY` to your `.env` file
 
 2. **"TinyURL API returned status code: 401"**
-   - Solution: Verify your API token is correct
-   - Check that the token hasn't expired
+   - Solution: Verify your API key is correct
+   - Check that the key hasn't expired
 
 3. **"Failed to shorten URL with TinyURL"**
    - The application will fall back to using original URLs
@@ -100,12 +100,12 @@ To see detailed TinyURL logs, the application includes:
 
 ## Security Best Practices
 
-1. **Never commit API tokens to version control**
+1. **Never commit API keys to version control**
    - Always use `.env` files
    - Add `.env` to your `.gitignore`
 
-2. **Rotate API tokens periodically**
-   - Generate new tokens every few months
+2. **Rotate API keys periodically**
+   - Generate new keys every few months
    - Update your `.env` file accordingly
 
 3. **Monitor API usage**

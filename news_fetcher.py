@@ -78,10 +78,10 @@ class NewsFetcher:
         try:
             logger.debug(f"Shortening URL with TinyURL: {url[:100]}...")
             
-            # Get TinyURL API token from environment
-            api_token = os.getenv('TINYURL_API_TOKEN')
-            if not api_token:
-                logger.warning("TinyURL API token not found, falling back to free endpoint")
+            # Get TinyURL API key from environment
+            api_key = os.getenv('TINYURL_API_KEY')
+            if not api_key:
+                logger.warning("TinyURL API key not found, falling back to free endpoint")
                 # Fallback to free endpoint
                 tinyurl_api = "http://tinyurl.com/api-create.php"
                 response = requests.get(tinyurl_api, params={'url': url}, timeout=10)
@@ -100,7 +100,7 @@ class NewsFetcher:
             }
             
             params = {
-                'api_token': api_token
+                'api_token': api_key
             }
             
             json_data = {
