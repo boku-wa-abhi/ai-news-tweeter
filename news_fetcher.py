@@ -29,47 +29,15 @@ class NewsFetcher:
             'digital transformation', 'AI investment', 'AI startup', 'AI regulation'
         ]
         
-        # Google News RSS feeds for AI topics from major financial and tech news sources
+        # RSS feeds for AI topics from WSJ and Reuters only
         self.rss_feeds = [
             {
-                'name': 'Google News - AI (Reuters)',
+                'name': 'Reuters - AI News',
                 'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:reuters.com&hl=en-US&gl=US&ceid=US:en'
             },
             {
-                'name': 'Google News - AI (Bloomberg)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:bloomberg.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (Wall Street Journal)',
+                'name': 'Wall Street Journal - AI News',
                 'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:wsj.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (Financial Times)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:ft.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (Nikkei)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:asia.nikkei.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (TechCrunch)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:techcrunch.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (The Verge)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:theverge.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (CNBC)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:cnbc.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (BBC Technology)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:bbc.com&hl=en-US&gl=US&ceid=US:en'
-            },
-            {
-                'name': 'Google News - AI (Associated Press)',
-                'url': 'https://news.google.com/rss/search?q=artificial+intelligence+site:apnews.com&hl=en-US&gl=US&ceid=US:en'
             }
         ]
         
@@ -105,6 +73,36 @@ class NewsFetcher:
         text = f"{title} {summary}".lower()
         return any(keyword.lower() in text for keyword in self.ai_keywords)
     
+    def _shorten_url_with_tinyurl(self, url: str) -> str:
+        """Shorten URL using TinyURL service"""
+        try:
+            logger.debug(f"Shortening URL with TinyURL: {url[:100]}...")
+            
+            # TinyURL API endpoint
+            tinyurl_api = "http://tinyurl.com/api-create.php"
+            
+            # Make request to TinyURL
+            response = requests.get(tinyurl_api, params={'url': url}, timeout=10)
+            
+            if response.status_code == 200:
+                short_url = response.text.strip()
+                if short_url.startswith('http'):
+                    logger.info(f"Successfully shortened URL: {short_url} (length: {len(short_url)})")
+                    return short_url
+                else:
+                    logger.warning(f"TinyURL returned unexpected response: {short_url}")
+            else:
+                logger.warning(f"TinyURL API returned status code: {response.status_code}")
+                
+        except requests.RequestException as e:
+            logger.warning(f"Failed to shorten URL with TinyURL: {e}")
+        except Exception as e:
+            logger.warning(f"Error during URL shortening: {e}")
+        
+        # If shortening fails, return original URL
+        logger.debug(f"Using original URL: {url[:100]}...")
+        return url
+    
     def _fetch_from_rss(self, feed_info: Dict) -> List[Dict]:
         """Fetch articles from a single RSS feed"""
         articles = []
@@ -126,18 +124,24 @@ class NewsFetcher:
                     pass  # If date parsing fails, include the article
                 
                 title = entry.get('title', '').strip()
-                url = entry.get('link', '').strip()
+                original_url = entry.get('link', '').strip()
                 summary = entry.get('summary', '').strip()
                 
-                # Skip if already posted
-                if url in self.posted_articles:
+                # Shorten URL using TinyURL
+                logger.info(f"Original URL length: {len(original_url)} chars")
+                short_url = self._shorten_url_with_tinyurl(original_url)
+                logger.info(f"Shortened URL length: {len(short_url)} chars")
+                
+                # Skip if already posted (check both original and shortened URL)
+                if original_url in self.posted_articles or short_url in self.posted_articles:
                     continue
                 
                 # Check if AI-related
                 if self._is_ai_related(title, summary):
                     articles.append({
                         'title': title,
-                        'url': url,
+                        'url': short_url,  # Use the shortened URL
+                        'original_url': original_url,  # Keep original for reference
                         'summary': summary,
                         'source': feed_info['name'],
                         'published': entry.get('published', '')
@@ -165,19 +169,35 @@ class NewsFetcher:
                 seen_urls.add(article['url'])
                 unique_articles.append(article)
         
+        # Filter articles by URL length (TinyURL creates short URLs, typically ≤ 30 characters)
+        short_url_articles = [article for article in unique_articles if len(article['url']) <= 50]
+        long_url_articles = [article for article in unique_articles if len(article['url']) > 50]
+        
         # Sort by relevance (simple scoring based on keyword frequency)
         def score_article(article):
             text = f"{article['title']} {article['summary']}".lower()
             score = sum(text.count(keyword.lower()) for keyword in self.ai_keywords)
             return score
         
-        unique_articles.sort(key=score_article, reverse=True)
+        short_url_articles.sort(key=score_article, reverse=True)
+        long_url_articles.sort(key=score_article, reverse=True)
         
-        # Return top articles up to limit (don't mark as posted yet)
-        top_articles = unique_articles[:limit]
+        # Prioritize short URL articles, fallback to long URL articles if needed
+        selected_articles = []
         
-        logger.info(f"Found {len(top_articles)} articles to tweet")
-        return top_articles
+        # First, try to get articles with short URLs
+        if short_url_articles:
+            selected_articles.extend(short_url_articles[:limit])
+            logger.info(f"Selected {len(selected_articles)} articles with short URLs (≤50 chars)")
+        
+        # If we need more articles and don't have enough short URL ones, add long URL articles
+        if len(selected_articles) < limit and long_url_articles:
+            remaining_needed = limit - len(selected_articles)
+            selected_articles.extend(long_url_articles[:remaining_needed])
+            logger.info(f"Added {min(remaining_needed, len(long_url_articles))} articles with long URLs (>50 chars)")
+        
+        logger.info(f"Found {len(selected_articles)} articles to tweet")
+        return selected_articles
     
     def mark_article_as_posted(self, article_url: str):
         """Mark a specific article as posted after successful tweet"""

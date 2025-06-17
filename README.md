@@ -61,12 +61,6 @@ You'll need to obtain API keys from:
    - `TWITTER_ACCESS_TOKEN`
    - `TWITTER_ACCESS_SECRET`
 
-#### TinyURL API (Optional)
-1. Visit [TinyURL API](https://tinyurl.com/app/dev)
-2. Create an account and generate an API key
-3. Note down your `TINYURL_API_KEY`
-4. If not provided, the system will use the free TinyURL service
-
 ### 4. Configure GitHub Secrets
 
 In your GitHub repository, go to Settings → Secrets and Variables → Actions, and add:
@@ -76,7 +70,6 @@ In your GitHub repository, go to Settings → Secrets and Variables → Actions,
 - `TWITTER_CONSUMER_SECRET`
 - `TWITTER_ACCESS_TOKEN`
 - `TWITTER_ACCESS_SECRET`
-- `TINYURL_API_KEY` (optional)
 
 ### 5. Local Testing (Optional)
 
@@ -84,7 +77,6 @@ For local testing, create a `.env` file:
 
 ```bash
 DEEPSEEK_API_KEY=your_deepseek_api_key
-TINYURL_API_KEY=your_tinyurl_api_key
 TWITTER_CONSUMER_KEY=your_twitter_consumer_key
 TWITTER_CONSUMER_SECRET=your_twitter_consumer_secret
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
@@ -103,7 +95,7 @@ python main.py
 2. **Content Filtering**: Identifies AI/LLM-related articles using comprehensive keyword matching
 3. **Deduplication**: Checks against previously posted articles
 4. **Summarization**: Uses DeepSeek API to create engaging summaries
-5. **Tweet Formatting**: Formats content with hashtags and ensures ≤250 characters
+5. **Tweet Formatting**: Formats content with hashtags, preserves original URLs for rich link previews, and ensures ≤250 characters
 6. **Publishing**: Posts tweets to Twitter and logs the activity
 
 ## 📊 News Sources

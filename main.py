@@ -15,7 +15,7 @@ from tweet_poster import TweetPoster
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # Enable debug logging to see URL extraction details
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('tweet_log.txt'),
@@ -34,43 +34,51 @@ def main():
         tweet_formatter = TweetFormatter()
         tweet_poster = TweetPoster()
         
-        # Fetch latest AI news articles (limit to 1 for single tweet per run)
+        # Fetch latest AI news articles (get more to handle URL filtering)
         logger.info("Fetching latest AI news...")
-        articles = news_fetcher.fetch_top_articles(limit=1)
+        articles = news_fetcher.fetch_top_articles(limit=5)  # Get more articles to handle filtering
         
         if not articles:
             logger.warning("No articles found to tweet")
             return
         
-        # Process the single article
-        article = articles[0]
-        try:
-            logger.info(f"Processing article: {article['title'][:50]}...")
-            
-            # Format article into tweet
-            tweet_text = tweet_formatter.format_tweet(
-                title=article['title'],
-                url=article['url'],
-                summary=article.get('summary', '')
-            )
-            
-            if not tweet_text:
-                logger.error("Failed to format tweet for article")
-                return
-            
-            # Post tweet
-            success = tweet_poster.post_tweet(tweet_text)
-            
-            if success:
-                logger.info("Successfully posted tweet")
-                # Mark article as posted only after successful tweet
-                news_fetcher.mark_article_as_posted(article['url'])
-            else:
-                logger.error("Failed to post tweet")
-                # Don't mark as posted if tweet failed, so it can be retried later
+        # Process articles until we find one that works
+        tweet_posted = False
+        for article in articles:
+            try:
+                logger.info(f"Processing article: {article['title'][:50]}...")
+                logger.info(f"Article URL length: {len(article['url'])} chars")
                 
-        except Exception as e:
-            logger.error(f"Error processing article: {str(e)}")
+                # Format article into tweet
+                tweet_text = tweet_formatter.format_tweet(
+                    title=article['title'],
+                    url=article['url'],
+                    summary=article.get('summary', '')
+                )
+                
+                if not tweet_text:
+                    logger.warning("Failed to format tweet for article (likely URL too long), trying next article...")
+                    continue
+                
+                # Post tweet
+                success = tweet_poster.post_tweet(tweet_text)
+                
+                if success:
+                    logger.info("Successfully posted tweet")
+                    # Mark article as posted only after successful tweet
+                    news_fetcher.mark_article_as_posted(article['url'])
+                    tweet_posted = True
+                    break
+                else:
+                    logger.error("Failed to post tweet, trying next article...")
+                    continue
+                    
+            except Exception as e:
+                logger.error(f"Error processing article: {str(e)}, trying next article...")
+                continue
+        
+        if not tweet_posted:
+            logger.error("Failed to post any tweet from available articles")
             return
         
         logger.info("AI News Tweeter process completed")
