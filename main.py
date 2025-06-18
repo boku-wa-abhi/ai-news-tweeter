@@ -69,7 +69,7 @@ def main():
             # Mark article as posted only after successful tweet
             news_fetcher.mark_article_as_posted(latest_article['url'])
             # Update rotation state after successful posting
-            news_fetcher._update_rotation_state()
+            news_fetcher._update_rotation_state(latest_article['source'])
         else:
             logger.error("Failed to post tweet for the latest article")
             return
