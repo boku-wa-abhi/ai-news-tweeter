@@ -47,6 +47,10 @@ class NewsFetcher:
         # Load posted articles to avoid duplicates
         self.posted_articles_file = 'posted_articles.json'
         self.posted_articles = self._load_posted_articles()
+        
+        # Source rotation management
+        self.source_rotation_file = 'source_rotation.json'
+        self.rotation_state = self._load_rotation_state()
     
     def _load_posted_articles(self) -> set:
         """Load previously posted article URLs"""
@@ -70,6 +74,58 @@ class NewsFetcher:
                 json.dump(data, f, indent=2)
         except Exception as e:
             logger.error(f"Could not save posted articles: {e}")
+    
+    def _load_rotation_state(self) -> dict:
+        """Load source rotation state"""
+        try:
+            if os.path.exists(self.source_rotation_file):
+                with open(self.source_rotation_file, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load rotation state: {e}")
+        
+        # Default rotation state
+        return {
+            'last_source': None,
+            'last_updated': None,
+            'rotation_order': ['WSJ Technology', 'Reuters Technology']
+        }
+    
+    def _save_rotation_state(self):
+        """Save source rotation state"""
+        try:
+            with open(self.source_rotation_file, 'w') as f:
+                json.dump(self.rotation_state, f, indent=2)
+        except Exception as e:
+            logger.error(f"Could not save rotation state: {e}")
+    
+    def _get_next_source(self) -> str:
+        """Get the next source in rotation"""
+        rotation_order = self.rotation_state['rotation_order']
+        last_source = self.rotation_state.get('last_source')
+        
+        if last_source is None:
+            # First run, start with WSJ
+            next_source = rotation_order[0]
+        else:
+            # Find current index and get next
+            try:
+                current_index = rotation_order.index(last_source)
+                next_index = (current_index + 1) % len(rotation_order)
+                next_source = rotation_order[next_index]
+            except ValueError:
+                # Fallback if last_source not found
+                next_source = rotation_order[0]
+        
+        logger.info(f"Source rotation: Last={last_source}, Next={next_source}")
+        return next_source
+    
+    def _update_rotation_state(self, source_name: str):
+        """Update rotation state after successful posting"""
+        self.rotation_state['last_source'] = source_name
+        self.rotation_state['last_updated'] = datetime.now().isoformat()
+        self._save_rotation_state()
+        logger.info(f"Updated rotation state: last_source={source_name}")
     
     def _is_ai_related(self, title: str, summary: str = "") -> bool:
         """Check if article is AI/tech-related based on keywords"""
@@ -308,28 +364,42 @@ class NewsFetcher:
         return articles
     
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
-        """Fetch top tech articles using RSS feeds and web scraping"""
-        all_articles = []
+        """Fetch top tech articles using source rotation to alternate between WSJ and Reuters"""
+        # Get the next source in rotation
+        target_source = self._get_next_source()
+        logger.info(f"Fetching articles from: {target_source}")
         
-        # Fetch from tech feeds
+        # Find the target source configuration
+        target_feed = None
         for feed_info in self.tech_feeds:
-            if 'reuters' in feed_info['url'].lower():
-                # Try scraping Reuters first, fallback to RSS if needed
-                articles = self._scrape_reuters_tech(feed_info)
-                if not articles:
-                    logger.info("Reuters scraping failed, trying RSS fallback...")
-                    # Could add RSS fallback here if needed
-            elif 'wsj' in feed_info['name'].lower():
-                # Use RSS for WSJ since scraping is blocked
-                articles = self._fetch_from_rss(feed_info)
-            else:
-                continue
-            all_articles.extend(articles)
+            if feed_info['name'] == target_source:
+                target_feed = feed_info
+                break
+        
+        if not target_feed:
+            logger.error(f"Target source '{target_source}' not found in tech_feeds")
+            return []
+        
+        # Fetch articles from the target source only
+        articles = []
+        if 'reuters' in target_feed['url'].lower():
+            # Try scraping Reuters first, fallback to RSS if needed
+            articles = self._scrape_reuters_tech(target_feed)
+            if not articles:
+                logger.info("Reuters scraping failed, trying RSS fallback...")
+                # Could add RSS fallback here if needed
+        elif 'wsj' in target_feed['name'].lower():
+            # Use RSS for WSJ since scraping is blocked
+            articles = self._fetch_from_rss(target_feed)
+        
+        if not articles:
+            logger.warning(f"No articles found from {target_source}")
+            return []
         
         # Remove duplicates based on URL
         seen_urls = set()
         unique_articles = []
-        for article in all_articles:
+        for article in articles:
             if article['url'] not in seen_urls:
                 seen_urls.add(article['url'])
                 unique_articles.append(article)
@@ -353,15 +423,15 @@ class NewsFetcher:
         # First, try to get articles with short URLs
         if short_url_articles:
             selected_articles.extend(short_url_articles[:limit])
-            logger.info(f"Selected {len(selected_articles)} articles with short URLs (≤50 chars)")
+            logger.info(f"Selected {len(selected_articles)} articles with short URLs (≤50 chars) from {target_source}")
         
         # If we need more articles and don't have enough short URL ones, add long URL articles
         if len(selected_articles) < limit and long_url_articles:
             remaining_needed = limit - len(selected_articles)
             selected_articles.extend(long_url_articles[:remaining_needed])
-            logger.info(f"Added {min(remaining_needed, len(long_url_articles))} articles with long URLs (>50 chars)")
+            logger.info(f"Added {min(remaining_needed, len(long_url_articles))} articles with long URLs (>50 chars) from {target_source}")
         
-        logger.info(f"Found {len(selected_articles)} articles to tweet")
+        logger.info(f"Found {len(selected_articles)} articles to tweet from {target_source}")
         return selected_articles
     
     def mark_article_as_posted(self, article_url: str):
