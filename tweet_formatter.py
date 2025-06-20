@@ -188,11 +188,12 @@ Summary: {summary[:500]}
             processed_url = self._shorten_url(url)
             url_length = len(processed_url)
             
-            # If URL is over 50 characters, reject this article (TinyURL should be much shorter)
-            # This allows for shortened URLs which should be under 50 chars
-            if url_length > 50:
-                logger.warning(f"URL too long ({url_length} chars): {processed_url[:50]}...")
-                return None
+            # Twitter automatically shortens URLs to 23 characters with t.co
+            # So we don't need to reject articles based on URL length
+            # The original URL is preserved for better link previews
+            if url_length > 200:
+                logger.warning(f"URL extremely long ({url_length} chars): {processed_url[:50]}...")
+                # Only warn but don't reject - Twitter will handle it
             
             logger.info(f"Processing article with URL length: {url_length} chars")
             

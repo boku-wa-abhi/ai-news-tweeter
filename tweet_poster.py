@@ -18,10 +18,10 @@ class TweetPoster:
     
     def __init__(self):
         # Get Twitter API credentials from environment variables
-        self.consumer_key = os.getenv('TWITTER_CONSUMER_KEY')
-        self.consumer_secret = os.getenv('TWITTER_CONSUMER_SECRET')
+        self.consumer_key = os.getenv('TWITTER_API_KEY') or os.getenv('TWITTER_CONSUMER_KEY')
+        self.consumer_secret = os.getenv('TWITTER_API_SECRET') or os.getenv('TWITTER_CONSUMER_SECRET')
         self.access_token = os.getenv('TWITTER_ACCESS_TOKEN')
-        self.access_token_secret = os.getenv('TWITTER_ACCESS_SECRET')
+        self.access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET') or os.getenv('TWITTER_ACCESS_SECRET')
         
         # Validate credentials
         self.credentials_valid = all([

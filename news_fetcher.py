@@ -180,18 +180,71 @@ class NewsFetcher:
             logger.error(f"Error fetching from {page_info['name']}: {e}")
         return articles
 
-    def post_random_article(self):
-        """Post one of the two articles randomly."""
-        import random
-        articles = []
-        if random.choice([True, False]):
-            articles = self.fetch_latest_reuters_tech_news()
-        else:
-            articles = self.fetch_latest_mit_tech_review_article()
-        if articles:
-            article = random.choice(articles)
-            # Logic to post the article
-            logger.info(f"Posting article: {article['title']} from {article['source']}")
+    def post_random_article(self) -> bool:
+        """Post a random article from available sources"""
+        try:
+            # Try both sources in random order, with fallback
+            import random
+            from tweet_formatter import TweetFormatter
+            from tweet_poster import TweetPoster
+            
+            sources = ['reuters', 'mit']
+            random.shuffle(sources)
+            
+            articles = None
+            for source in sources:
+                try:
+                    if source == 'reuters':
+                        logger.info("Fetching latest articles from: Reuters Technology")
+                        articles = self.fetch_latest_reuters_tech_news()
+                    else:
+                        logger.info("Fetching latest articles from: MIT Technology Review")
+                        articles = self.fetch_latest_mit_tech_review_article()
+                    
+                    if articles:
+                        logger.info(f"Successfully fetched {len(articles)} articles from {source}")
+                        break
+                    else:
+                        logger.warning(f"No articles found from {source}, trying next source")
+                        
+                except Exception as e:
+                    logger.error(f"Error fetching from {source}: {e}, trying next source")
+                    continue
+            
+            if not articles:
+                logger.warning("No articles found from any source")
+                return False
+            
+            # Select the first article
+            article = articles[0]
+            logger.info(f"Selected article for posting: {article.get('title', 'Unknown title')}")
+            
+            # Format the tweet
+            tweet_formatter = TweetFormatter()
+            tweet_text = tweet_formatter.format_tweet(
+                title=article.get('title', ''),
+                url=article.get('url', ''),
+                summary=article.get('summary', '')
+            )
+            
+            if not tweet_text:
+                logger.error(f"Failed to format tweet for: {article.get('title', 'Unknown title')}")
+                return False
+            
+            # Post the tweet
+            tweet_poster = TweetPoster()
+            success = tweet_poster.post_tweet(tweet_text)
+            
+            if success:
+                logger.info(f"Successfully posted tweet for: {article.get('title', 'Unknown title')}")
+                return True
+            else:
+                logger.error(f"Failed to post tweet for: {article.get('title', 'Unknown title')}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error in post_random_article: {e}")
+            return False
 
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
         """Deprecated method - use post_random_article instead"""
