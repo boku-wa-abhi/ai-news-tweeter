@@ -363,23 +363,36 @@ class NewsFetcher:
         
         return articles
     
+    def fetch_latest_reuters_tech_news(self) -> List[Dict]:
+        """Fetch the latest Reuters Technology news articles."""
+        page_info = {
+            'name': 'Reuters Technology',
+            'url': 'https://www.reuters.com/technology/',
+            'base_url': 'https://www.reuters.com'
+        }
+        logger.info(f"Fetching latest articles from: {page_info['name']}")
+        articles = self._scrape_reuters_tech(page_info)
+        if not articles:
+            logger.warning("No articles found from Reuters Technology")
+        return articles
+
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
         """Fetch top tech articles using source rotation to alternate between WSJ and Reuters"""
         # Get the next source in rotation
         target_source = self._get_next_source()
         logger.info(f"Fetching articles from: {target_source}")
-        
+
         # Find the target source configuration
         target_feed = None
         for feed_info in self.tech_feeds:
             if feed_info['name'] == target_source:
                 target_feed = feed_info
                 break
-        
+
         if not target_feed:
             logger.error(f"Target source '{target_source}' not found in tech_feeds")
             return []
-        
+
         # Fetch articles from the target source only
         articles = []
         if 'reuters' in target_feed['url'].lower():
@@ -391,11 +404,11 @@ class NewsFetcher:
         elif 'wsj' in target_feed['name'].lower():
             # Use RSS for WSJ since scraping is blocked
             articles = self._fetch_from_rss(target_feed)
-        
+
         if not articles:
             logger.warning(f"No articles found from {target_source}")
             return []
-        
+
         # Remove duplicates based on URL
         seen_urls = set()
         unique_articles = []
@@ -403,34 +416,34 @@ class NewsFetcher:
             if article['url'] not in seen_urls:
                 seen_urls.add(article['url'])
                 unique_articles.append(article)
-        
+
         # Filter articles by URL length (TinyURL creates short URLs, typically ≤ 30 characters)
         short_url_articles = [article for article in unique_articles if len(article['url']) <= 50]
         long_url_articles = [article for article in unique_articles if len(article['url']) > 50]
-        
+
         # Sort by relevance (simple scoring based on keyword frequency)
         def score_article(article):
             text = f"{article['title']} {article['summary']}".lower()
             score = sum(text.count(keyword.lower()) for keyword in self.ai_keywords)
             return score
-        
+
         short_url_articles.sort(key=score_article, reverse=True)
         long_url_articles.sort(key=score_article, reverse=True)
-        
+
         # Prioritize short URL articles, fallback to long URL articles if needed
         selected_articles = []
-        
+
         # First, try to get articles with short URLs
         if short_url_articles:
             selected_articles.extend(short_url_articles[:limit])
             logger.info(f"Selected {len(selected_articles)} articles with short URLs (≤50 chars) from {target_source}")
-        
+
         # If we need more articles and don't have enough short URL ones, add long URL articles
         if len(selected_articles) < limit and long_url_articles:
             remaining_needed = limit - len(selected_articles)
             selected_articles.extend(long_url_articles[:remaining_needed])
             logger.info(f"Added {min(remaining_needed, len(long_url_articles))} articles with long URLs (>50 chars) from {target_source}")
-        
+
         logger.info(f"Found {len(selected_articles)} articles to tweet from {target_source}")
         return selected_articles
     
