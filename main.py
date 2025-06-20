@@ -34,46 +34,9 @@ def main():
         tweet_formatter = TweetFormatter()
         tweet_poster = TweetPoster()
         
-        # Fetch latest tech news articles from Reuters
-        logger.info("Fetching latest tech news from Reuters...")
-        articles = news_fetcher.fetch_top_articles(limit=10)  # Get more articles to find the latest one
-        
-        if not articles:
-            logger.warning("No articles found to tweet")
-            return
-        
-        # Sort articles by published date to get the latest one
-        articles.sort(key=lambda x: x.get('published', ''), reverse=True)
-        latest_article = articles[0]
-        
-        logger.info(f"Selected latest article: {latest_article['title'][:50]}...")
-        logger.info(f"Article URL length: {len(latest_article['url'])} chars")
-        logger.info(f"Source: {latest_article['source']}")
-        
-        # Format article into tweet
-        tweet_text = tweet_formatter.format_tweet(
-            title=latest_article['title'],
-            url=latest_article['url'],
-            summary=latest_article.get('summary', '')
-        )
-        
-        if not tweet_text:
-            logger.error("Failed to format tweet for the latest article")
-            return
-        
-        # Post tweet
-        success = tweet_poster.post_tweet(tweet_text)
-        
-        if success:
-            logger.info("Successfully posted tweet for the latest article")
-            # Mark article as posted only after successful tweet
-            news_fetcher.mark_article_as_posted(latest_article['url'])
-            # Update rotation state after successful posting
-            news_fetcher._update_rotation_state(latest_article['source'])
-        else:
-            logger.error("Failed to post tweet for the latest article")
-            return
-        
+        # Use the new random article posting method
+        logger.info("Posting random article from Reuters or MIT Technology Review...")
+        news_fetcher.post_random_article()
         logger.info("AI News Tweeter process completed")
         
     except Exception as e:
