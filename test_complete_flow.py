@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test script to demonstrate complete flow with WSJ/Reuters feeds and TinyURL"""
+"""Test script to demonstrate complete flow with Reuters feeds and TinyURL"""
 
 import logging
 from news_fetcher import NewsFetcher
@@ -19,7 +19,7 @@ def main():
     tweet_formatter = TweetFormatter()
     
     # Fetch articles
-    print("\n1. Fetching AI news from WSJ and Reuters...")
+    print("\n1. Fetching AI news from Reuters...")
     articles = news_fetcher.fetch_top_articles(2)
     
     if not articles:
@@ -59,7 +59,7 @@ def main():
         print("\n" + "-" * 80)
     
     print("\n🎉 Test completed! The system successfully:")
-    print("   ✅ Fetches news from WSJ and Reuters only")
+    print("   ✅ Fetches news from Reuters only")
     print("   ✅ Shortens URLs using TinyURL (from ~244 to ~28 characters)")
     print("   ✅ Formats tweets within Twitter's 280-character limit")
     print("   ✅ Adds relevant hashtags and humorous tone")

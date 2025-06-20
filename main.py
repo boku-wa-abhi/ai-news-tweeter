@@ -34,8 +34,8 @@ def main():
         tweet_formatter = TweetFormatter()
         tweet_poster = TweetPoster()
         
-        # Fetch latest tech news articles from WSJ and Reuters
-        logger.info("Fetching latest tech news from WSJ and Reuters...")
+        # Fetch latest tech news articles from Reuters
+        logger.info("Fetching latest tech news from Reuters...")
         articles = news_fetcher.fetch_top_articles(limit=10)  # Get more articles to find the latest one
         
         if not articles:

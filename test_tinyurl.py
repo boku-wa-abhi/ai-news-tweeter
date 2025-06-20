@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test script to check TinyURL functionality with WSJ and Reuters feeds"""
+"""Test script to check TinyURL functionality with Reuters feeds"""
 
 import logging
 from news_fetcher import NewsFetcher
@@ -8,7 +8,7 @@ from news_fetcher import NewsFetcher
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def main():
-    print("=== Testing WSJ and Reuters feeds with TinyURL ===\n")
+    print("=== Testing Reuters feeds with TinyURL ===\n")
     
     # Create news fetcher
     nf = NewsFetcher()

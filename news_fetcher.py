@@ -88,7 +88,7 @@ class NewsFetcher:
         return {
             'last_source': None,
             'last_updated': None,
-            'rotation_order': ['WSJ Technology', 'Reuters Technology']
+            'rotation_order': ['Reuters Technology']
         }
     
     def _save_rotation_state(self):
@@ -105,7 +105,7 @@ class NewsFetcher:
         last_source = self.rotation_state.get('last_source')
         
         if last_source is None:
-            # First run, start with WSJ
+            # First run, start with Reuters
             next_source = rotation_order[0]
         else:
             # Find current index and get next
@@ -376,8 +376,51 @@ class NewsFetcher:
             logger.warning("No articles found from Reuters Technology")
         return articles
 
+    def fetch_latest_mit_tech_review_article(self) -> List[Dict]:
+        """Fetch the latest article from MIT Technology Review."""
+        page_info = {
+            'name': 'MIT Technology Review',
+            'url': 'https://www.technologyreview.com/2025/05/19/1116614/hao-empire-ai-openai/',
+            'base_url': 'https://www.technologyreview.com'
+        }
+        logger.info(f"Fetching latest article from: {page_info['name']}")
+        articles = []
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(page_info['url'], headers=headers, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+            title = soup.find('title').get_text().strip()
+            if title:
+                articles.append({
+                    'title': title,
+                    'url': page_info['url'],
+                    'original_url': page_info['url'],
+                    'summary': '',
+                    'source': page_info['name'],
+                    'published': datetime.now().isoformat()
+                })
+        except Exception as e:
+            logger.error(f"Error fetching from {page_info['name']}: {e}")
+        return articles
+
+    def post_random_article(self):
+        """Post one of the two articles randomly."""
+        import random
+        articles = []
+        if random.choice([True, False]):
+            articles = self.fetch_latest_reuters_tech_news()
+        else:
+            articles = self.fetch_latest_mit_tech_review_article()
+        if articles:
+            article = random.choice(articles)
+            # Logic to post the article
+            logger.info(f"Posting article: {article['title']} from {article['source']}")
+
     def fetch_top_articles(self, limit: int = 2) -> List[Dict]:
-        """Fetch top tech articles using source rotation to alternate between WSJ and Reuters"""
+        """Fetch top tech articles using source rotation to alternate between Reuters"""
         # Get the next source in rotation
         target_source = self._get_next_source()
         logger.info(f"Fetching articles from: {target_source}")
@@ -401,9 +444,6 @@ class NewsFetcher:
             if not articles:
                 logger.info("Reuters scraping failed, trying RSS fallback...")
                 # Could add RSS fallback here if needed
-        elif 'wsj' in target_feed['name'].lower():
-            # Use RSS for WSJ since scraping is blocked
-            articles = self._fetch_from_rss(target_feed)
 
         if not articles:
             logger.warning(f"No articles found from {target_source}")
