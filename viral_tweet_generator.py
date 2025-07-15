@@ -1,14 +1,12 @@
 import os
-import random
 import logging
+import random
 from typing import Dict, Any
-from news_fetcher import NewsFetcher
-from tweet_poster import TweetPoster
 from openai import OpenAI
+from tweet_poster import TweetPoster
 
 class ViralTweetGenerator:
     def __init__(self):
-        self.news_fetcher = NewsFetcher()
         self.tweet_poster = TweetPoster()
         
         # Initialize DeepSeek client
@@ -62,32 +60,31 @@ class ViralTweetGenerator:
             "I'll open-source this if this gets 50 RTs."
         ]
     
+
+    
     def generate_viral_tweet(self) -> bool:
         """Generate and post a viral AI tweet"""
         try:
-            # Fetch latest AI news
-            articles = self.news_fetcher.fetch_latest_newsapi_articles()
-            if not articles:
-                logging.error("No articles found for viral tweet generation")
-                return False
-            
-            article = articles[0]  # Use the first article
-            
             # Randomly select components
             hook = random.choice(self.hooks)
             value = random.choice(self.value_statements)
             emotion = random.choice(self.emotions)
             cta = random.choice(self.shareability_triggers)
             
+            # Log the selected components
+            logging.info(f"Selected Hook: {hook}")
+            logging.info(f"Selected Value: {value}")
+            logging.info(f"Selected Emotion: {emotion}")
+            logging.info(f"Selected CTA: {cta}")
+            
             # Create prompt for DeepSeek
-            prompt = f"""You're an expert viral content creator. Use the following structure to create a viral tweet about this AI news:
+            prompt = f"""You're an expert viral content creator. Use the following structure to create a viral tweet about AI:
 HOOK: {hook}
 VALUE: {value}
 EMOTION: {emotion}
 CTA: {cta}
 
-Here is the news: '{article['title']}' — '{article['description']}'. 
-Create a tweet under 280 characters with this tone and style. Include emojis only if they help enhance clarity or energy."""
+Create a viral AI-related tweet under 280 characters using these components. The tweet should be engaging, informative, and shareable. Include emojis only if they help enhance clarity or energy."""
             
             # Generate tweet with DeepSeek
             response = self.deepseek_client.chat.completions.create(
@@ -95,26 +92,28 @@ Create a tweet under 280 characters with this tone and style. Include emojis onl
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=150,
+                max_tokens=100,
                 temperature=0.8
             )
             
-            tweet_content = response.choices[0].message.content.strip()
+            generated_tweet = response.choices[0].message.content.strip()
             
-            # Verify character count
-            if len(tweet_content) > 280:
-                logging.warning(f"Tweet too long ({len(tweet_content)} chars), truncating")
-                tweet_content = tweet_content[:277] + "..."
+            # Ensure tweet is under 280 characters
+            if len(generated_tweet) > 280:
+                # Truncate the generated content to fit character limit
+                final_tweet = generated_tweet[:280].rsplit(' ', 1)[0]
+                logging.warning(f"Tweet truncated to fit character limit: {len(final_tweet)} chars")
+            else:
+                final_tweet = generated_tweet
             
             # Post the tweet
-            success = self.tweet_poster.post_tweet(tweet_content)
-            
+            success = self.tweet_poster.post_tweet(final_tweet)
             if success:
-                logging.info(f"Viral tweet posted successfully: {tweet_content[:50]}...")
-                return True
+                logging.info(f"Successfully posted viral tweet: {final_tweet}")
             else:
                 logging.error("Failed to post viral tweet")
-                return False
+            
+            return success
                 
         except Exception as e:
             logging.error(f"Error generating viral tweet: {str(e)}")
