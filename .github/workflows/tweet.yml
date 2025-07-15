@@ -2,11 +2,9 @@ name: AI News Tweeter
 
 on:
   schedule:
-    # Run once daily: 9 AM JST (0 AM UTC)
-    - cron: '0 0 * * *'   # 9 AM JST
-  
-  # Allow manual triggering
-  workflow_dispatch:
+    # Run at 6:00 AM JST (21:00 UTC previous day)
+    - cron: '0 21 * * *'
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   tweet-ai-news:

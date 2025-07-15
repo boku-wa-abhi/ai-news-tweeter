@@ -47,7 +47,7 @@ jobs:
     
     - name: Upload logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: viral-tweet-logs-${{ github.run_number }}
         path: |
