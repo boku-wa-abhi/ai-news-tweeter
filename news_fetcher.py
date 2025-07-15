@@ -4,12 +4,14 @@ Fetches latest tech news from WSJ and Reuters by scraping their tech pages direc
 
 import requests
 import logging
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+import random
+from datetime import timedelta
 from typing import List, Dict, Optional
-from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup
 import re
 import feedparser
 
@@ -20,6 +22,64 @@ class NewsFetcher:
     
     def __init__(self):
         self.posted_articles = set()
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        })
+        
+        # NewsAPI configuration
+        self.newsapi_key = os.getenv('NEWSAPI_KEY')
+        self.newsapi_url = 'https://newsapi.org/v2/everything'
+        
+        # TinyURL configuration
+        self.tinyurl_api_key = os.getenv('TINYURL_API_KEY')
+        self.tinyurl_url = 'https://api.tinyurl.com/create'
+        
+        # AI-related keywords for NewsAPI search
+        self.ai_keywords = [
+            # Core AI & ML Terms
+            'Artificial Intelligence', 'Machine Learning', 'Deep Learning', 'Neural Networks',
+            'Transformers', 'LSTM', 'Attention Mechanism', 'Reinforcement Learning',
+            'Self-Supervised Learning', 'Generative Models',
+            
+            # Large Language Models (LLMs)
+            'Large Language Model', 'LLM', 'GPT', 'GPT-4', 'GPT-5', 'OpenAI',
+            'ChatGPT', 'Claude', 'LLaMA', 'Mistral',
+            
+            # Natural Language Processing (NLP)
+            'Natural Language Processing', 'Language Model', 'Prompt Engineering',
+            'Tokenization', 'Fine-Tuning', 'Embeddings', 'Zero-shot Learning',
+            'Few-shot Learning', 'In-context Learning', 'Prompt Tuning',
+            
+            # AI Tools & Libraries
+            'Hugging Face', 'LangChain', 'Transformers Library', 'PyTorch',
+            'TensorFlow', 'Open Source LLM', 'AutoGPT', 'DeepSeek', 'Ollama', 'FastChat',
+            
+            # Autonomous Agents & Tools
+            'Autonomous Agents', 'ReAct', 'Toolformer', 'BabyAGI', 'AutoGPT',
+            'Agentic Workflow', 'LLM Agents', 'AI Agent', 'LangGraph', 'Memory-Augmented Agents',
+            
+            # Conversational AI
+            'Chatbot', 'Conversational AI', 'Dialogue Systems', 'Retrieval-Augmented Generation',
+            'RAG', 'Vector Database', 'Pinecone', 'FAISS', 'Milvus', 'Semantic Search',
+            
+            # AI Research & Models
+            'Paper with Code', 'Arxiv', 'Google DeepMind', 'Meta AI', 'Anthropic',
+            'Perplexity', 'Mamba Model', 'RWKV', 'Gemini AI', 'PaLM',
+            
+            # Applications
+            'Text-to-Image', 'Text-to-Video', 'Image Generation', 'Code Generation',
+            'AI Coding Assistant', 'AI Content Creation', 'AI Research Tools',
+            'Document AI', 'LLM for Business', 'Chat with PDF',
+            
+            # Trends & Ecosystem
+            'AI Safety', 'Hallucination', 'Red Teaming', 'Prompt Injection',
+            'Alignment', 'Model Compression', 'Quantization', 'LoRA', 'PEFT', 'AI Regulation',
+            
+            # Industry Buzz & Companies
+            'NVIDIA', 'OpenAI Dev Day', 'AGI', 'AI Startup', 'AI Funding',
+            'AI Scaling Laws', 'AI Ethics', 'VC in AI', 'Open Weight Models', 'AI Future'
+        ]
     
 
     
@@ -86,133 +146,79 @@ class NewsFetcher:
         logger.debug(f"Using original URL: {url[:100]}...")
         return url
     
-    def _scrape_reuters_tech(self, page_info: Dict) -> List[Dict]:
-        """Scrape articles from Reuters technology page"""
-        articles = []
-        try:
-            logger.info(f"Scraping from {page_info['name']}...")
-            
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-            
-            response = requests.get(page_info['url'], headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Find article links on Reuters tech page
-            article_links = soup.find_all('a', {'data-testid': 'Heading'})
-            
-            for link in article_links[:5]:  # Limit to top 5 articles
-                try:
-                    title = link.get_text().strip()
-                    relative_url = link.get('href', '')
-                    
-                    if not relative_url or not title:
-                        continue
-                        
-                    # Construct full URL
-                    if relative_url.startswith('/'):
-                        full_url = page_info['base_url'] + relative_url
-                    else:
-                        full_url = relative_url
-                    
-                    # Add all articles without filtering
-                    articles.append({
-                        'title': title,
-                        'url': full_url,
-                        'original_url': full_url,
-                        'summary': '',  # Reuters doesn't provide summary on listing page
-                        'source': page_info['name'],
-                        'published': datetime.now().isoformat()
-                    })
-                        
-                except Exception as e:
-                    logger.warning(f"Error processing Reuters article: {e}")
-                    continue
-                    
-        except Exception as e:
-            logger.error(f"Error scraping from {page_info['name']}: {e}")
-        
-        return articles
-    
-    def fetch_latest_reuters_tech_news(self) -> List[Dict]:
-        """Fetch the latest Reuters Technology news articles."""
-        page_info = {
-            'name': 'Reuters Technology',
-            'url': 'https://www.reuters.com/technology/',
-            'base_url': 'https://www.reuters.com'
-        }
-        logger.info(f"Fetching latest articles from: {page_info['name']}")
-        articles = self._scrape_reuters_tech(page_info)
-        if not articles:
-            logger.warning("No articles found from Reuters Technology")
-        return articles
 
-    def fetch_latest_mit_tech_review_article(self) -> List[Dict]:
-        """Fetch the latest article from MIT Technology Review."""
-        page_info = {
-            'name': 'MIT Technology Review',
-            'url': 'https://www.technologyreview.com/2025/05/19/1116614/hao-empire-ai-openai/',
-            'base_url': 'https://www.technologyreview.com'
-        }
-        logger.info(f"Fetching latest article from: {page_info['name']}")
+
+    def fetch_latest_newsapi_articles(self) -> List[Dict]:
+        """Fetch latest AI news from NewsAPI using random keywords"""
         articles = []
+        
+        if not self.newsapi_key:
+            logger.warning("NewsAPI key not available")
+            return articles
+        
         try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            # Randomly select a keyword
+            keyword = random.choice(self.ai_keywords)
+            logger.info(f"Searching NewsAPI for keyword: {keyword}")
+            
+            # NewsAPI parameters
+            params = {
+                'q': keyword,
+                'apiKey': self.newsapi_key,
+                'language': 'en',
+                'sortBy': 'publishedAt',
+                'pageSize': 5,  # Get top 5 articles
+                'domains': 'techcrunch.com,wired.com,arstechnica.com,theverge.com,venturebeat.com,zdnet.com,engadget.com,mashable.com,thenextweb.com,ieee.org'
             }
-            response = requests.get(page_info['url'], headers=headers, timeout=10)
+            
+            response = self.session.get(self.newsapi_url, params=params)
             response.raise_for_status()
-            soup = BeautifulSoup(response.content, 'html.parser')
-            title = soup.find('title').get_text().strip()
-            if title:
-                articles.append({
-                    'title': title,
-                    'url': page_info['url'],
-                    'original_url': page_info['url'],
-                    'summary': '',
-                    'source': page_info['name'],
-                    'published': datetime.now().isoformat()
-                })
+            
+            data = response.json()
+            
+            if data.get('status') == 'ok' and data.get('articles'):
+                for article_data in data['articles']:
+                    if article_data.get('title') and article_data.get('url'):
+                        # Skip articles with [Removed] content
+                        if '[Removed]' in str(article_data.get('title', '')) or '[Removed]' in str(article_data.get('description', '')):
+                            continue
+                            
+                        original_url = article_data.get('url', '')
+                        shortened_url = self._shorten_url_with_tinyurl(original_url)
+                        
+                        article = {
+                            'title': article_data['title'],
+                            'url': shortened_url,
+                            'original_url': original_url,
+                            'summary': article_data.get('description', ''),
+                            'source': f"NewsAPI ({keyword})",
+                            'published_at': article_data.get('publishedAt', ''),
+                            'keyword': keyword
+                        }
+                        articles.append(article)
+                        
+                logger.info(f"Found {len(articles)} articles from NewsAPI for keyword: {keyword}")
+            else:
+                logger.warning(f"No articles found from NewsAPI for keyword: {keyword}")
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching from NewsAPI: {e}")
         except Exception as e:
-            logger.error(f"Error fetching from {page_info['name']}: {e}")
+            logger.error(f"Unexpected error in NewsAPI fetch: {e}")
+            
         return articles
 
     def post_random_article(self) -> bool:
-        """Post a random article from available sources"""
+        """Post a random article from NewsAPI"""
         try:
-            # Try both sources in random order, with fallback
-            import random
             from tweet_formatter import TweetFormatter
             from tweet_poster import TweetPoster
             
-            sources = ['reuters', 'mit']
-            random.shuffle(sources)
-            
-            articles = None
-            for source in sources:
-                try:
-                    if source == 'reuters':
-                        logger.info("Fetching latest articles from: Reuters Technology")
-                        articles = self.fetch_latest_reuters_tech_news()
-                    else:
-                        logger.info("Fetching latest articles from: MIT Technology Review")
-                        articles = self.fetch_latest_mit_tech_review_article()
-                    
-                    if articles:
-                        logger.info(f"Successfully fetched {len(articles)} articles from {source}")
-                        break
-                    else:
-                        logger.warning(f"No articles found from {source}, trying next source")
-                        
-                except Exception as e:
-                    logger.error(f"Error fetching from {source}: {e}, trying next source")
-                    continue
+            logger.info("Fetching latest articles from: NewsAPI")
+            articles = self.fetch_latest_newsapi_articles()
             
             if not articles:
-                logger.warning("No articles found from any source")
+                logger.warning("No articles found from NewsAPI")
                 return False
             
             # Select the first article

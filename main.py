@@ -34,9 +34,15 @@ def main():
         tweet_formatter = TweetFormatter()
         tweet_poster = TweetPoster()
         
-        # Use the new random article posting method
-        logger.info("Posting random article from Reuters or MIT Technology Review...")
-        news_fetcher.post_random_article()
+        # Post article from NewsAPI
+        logger.info("Posting article from NewsAPI...")
+        success = news_fetcher.post_random_article()
+        
+        if success:
+            logger.info("Successfully posted AI news tweet")
+        else:
+            logger.error("Failed to post AI news tweet")
+            
         logger.info("AI News Tweeter process completed")
         
     except Exception as e:
