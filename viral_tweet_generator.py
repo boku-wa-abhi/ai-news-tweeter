@@ -32,16 +32,26 @@ class ViralTweetGenerator:
         
         # Viral tweet components
         self.hooks = [
-            "You won't believe what just dropped in AI today.",
-            "This new LLM is changing everything.",
-            "Open-source just caught up with GPT-4.",
-            "AI devs, you're gonna want this.",
-            "This one prompt unlocked my productivity.",
-            "Nobody's talking about this AI failure — but they should be.",
-            "I built an AI tool in 1 hour. Here's what happened.",
-            "This paper blew my mind. 🤯",
-            "You've heard of GPT-4, but what's next?",
-            "The AI tool stack I wish I had earlier."
+            "AI isn't coming for your job. It's coming for your entire industry.",
+            "The scariest thing about AI? It's not what it can do — it's what you don't know.",
+            "Most people won't believe how fast AI is evolving until it's too late.",
+            "If AI is 'just a tool,' why are billion-dollar companies being built on it overnight?",
+            "We're not teaching AI to think. We're teaching humans to think like AI.",
+            "The most powerful use of AI isn't replacing humans — it's augmenting them.",
+            "The best way to learn AI in 2024? Skip the theory. Build things.",
+            "AI doesn't need to be perfect to be useful. It just needs to be faster than you.",
+            "Don't ask 'how does AI work?' Ask 'what does it make possible?'",
+            "AI isn't just about code. It's about leverage.",
+            "AI won't destroy creativity. It'll unlock it for millions.",
+            "The real AI threat isn't sentience — it's bias at scale.",
+            "AI won't make people lazy. It'll make lazy people irrelevant.",
+            "AI won't kill jobs. It'll redefine what a job is.",
+            "AI won't write your story. But it might edit it better than you ever could.",
+            "AI is learning from us. The question is: are we worth learning from?",
+            "AI is the mirror. It reflects the best and worst of human thought.",
+            "Every time you use AI, you're outsourcing a little bit of your mind.",
+            "AI is not the end of human work. It's the beginning of better work.",
+            "We taught AI to understand us. Now we have to learn to understand it."
         ]
         
 
@@ -73,19 +83,19 @@ class ViralTweetGenerator:
             # Create prompt for DeepSeek
             prompt = f"""You're an expert viral content creator specializing in AI topics. Create a single, cohesive tweet that naturally incorporates:
 - Hook: {hook}
-
 - Emotion: {emotion}
 
 
 Requirements:
 - Weave these elements into natural, flowing text without using labels like '**HOOK:**'
 - Add 2-3 relevant hashtags at the end
-- No markdown formatting (no asterisks, bold, italics)
+- STRICTLY NO special characters: no asterisks (*), no quotation marks ("), no markdown formatting
 - Do not mention any specific papers or models without providing their names
 - Keep entire tweet under 280 characters
 - Make it engaging, informative, and shareable
 - Include emojis only if they enhance clarity or energy
-- Do not include any call to action"""
+- Do not include any call to action
+- Use simple punctuation only: periods, commas, exclamation marks, question marks"""
             
             # Generate tweet with DeepSeek
             response = self.deepseek_client.chat.completions.create(
