@@ -81,19 +81,19 @@ class ViralTweetGenerator:
 
             
             # Create prompt for DeepSeek
-            prompt = f"""You're an expert viral content creator specializing in AI topics. Create a single, cohesive tweet in Japanese that naturally incorporates:
+            prompt = f"""You're an expert viral content creator specializing in AI topics. Create a single, cohesive tweet in English that naturally incorporates:
 - Hook: {hook}
 - Emotion: {emotion}
 
 
 Requirements:
-- Output the tweet entirely in Japanese, ensuring it's natural and idiomatic
+- Output the tweet entirely in English, ensuring it's natural and idiomatic
 - Weave these elements into natural, flowing text without using labels like '**HOOK:**'
-- Add 2-3 relevant hashtags at the end (in English or Japanese as appropriate)
+- Add 2-3 relevant hashtags at the end (in English  as appropriate)
 - STRICTLY NO special characters: no asterisks (*), no quotation marks ("), no markdown formatting
 - Do not mention any specific papers or models without providing their names
-- Keep entire tweet under 280 characters (note: Japanese characters count as one each)
-- Make it engaging, informative, and shareable for Japanese audience
+- Keep entire tweet under 280 characters 
+- Make it engaging, informative, and shareable 
 - Include emojis only if they enhance clarity or energy
 - Do not include any call to action
 - Use simple punctuation only: periods, commas, exclamation marks, question marks
