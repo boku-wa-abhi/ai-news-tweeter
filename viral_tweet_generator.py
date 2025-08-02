@@ -96,7 +96,8 @@ Requirements:
 - Make it engaging, informative, and shareable for Japanese audience
 - Include emojis only if they enhance clarity or energy
 - Do not include any call to action
-- Use simple punctuation only: periods, commas, exclamation marks, question marks"""
+- Use simple punctuation only: periods, commas, exclamation marks, question marks
+- Do not include any character count or meta information like '(Characters: xxx)' at the end"""
             
             # Generate tweet with DeepSeek
             response = self.deepseek_client.chat.completions.create(
