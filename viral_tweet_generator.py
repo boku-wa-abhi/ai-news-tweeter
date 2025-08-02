@@ -32,26 +32,26 @@ class ViralTweetGenerator:
         
         # Viral tweet components
         self.hooks = [
-            "AI isn't coming for your job. It's coming for your entire industry.",
-            "The scariest thing about AI? It's not what it can do — it's what you don't know.",
-            "Most people won't believe how fast AI is evolving until it's too late.",
-            "If AI is 'just a tool,' why are billion-dollar companies being built on it overnight?",
-            "We're not teaching AI to think. We're teaching humans to think like AI.",
-            "The most powerful use of AI isn't replacing humans — it's augmenting them.",
-            "The best way to learn AI in 2024? Skip the theory. Build things.",
-            "AI doesn't need to be perfect to be useful. It just needs to be faster than you.",
-            "Don't ask 'how does AI work?' Ask 'what does it make possible?'",
-            "AI isn't just about code. It's about leverage.",
-            "AI won't destroy creativity. It'll unlock it for millions.",
-            "The real AI threat isn't sentience — it's bias at scale.",
-            "AI won't make people lazy. It'll make lazy people irrelevant.",
-            "AI won't kill jobs. It'll redefine what a job is.",
-            "AI won't write your story. But it might edit it better than you ever could.",
-            "AI is learning from us. The question is: are we worth learning from?",
-            "AI is the mirror. It reflects the best and worst of human thought.",
-            "Every time you use AI, you're outsourcing a little bit of your mind.",
-            "AI is not the end of human work. It's the beginning of better work.",
-            "We taught AI to understand us. Now we have to learn to understand it."
+            "AI is revolutionizing every industry, unlocking unprecedented innovation and growth!",
+            "Discover the amazing potential of AI to transform our world for the better.",
+            "AI is evolving rapidly, bringing exciting opportunities we never imagined.",
+            "From startups to giants, AI is powering the next wave of billion-dollar breakthroughs.",
+            "Humans and AI together: creating smarter, more efficient ways to think and work.",
+            "AI empowers humans to achieve more than ever before – augmentation at its finest!",
+            "Dive into AI hands-on: building the future is the best way to learn.",
+            "AI's speed and efficiency are game-changers, making impossible tasks achievable.",
+            "Focus on AI's possibilities: it's opening doors to incredible advancements.",
+            "AI provides massive leverage, multiplying human potential exponentially.",
+            "AI is unleashing creativity on a global scale – millions inspired!",
+            "With AI, we can overcome biases and create fairer systems for all.",
+            "AI rewards innovation, making relevance accessible to everyone.",
+            "AI is redefining jobs, creating exciting new opportunities in every field.",
+            "Let AI enhance your story – perfect edits for perfect narratives.",
+            "AI learns from the best in us, amplifying human excellence.",
+            "AI mirrors our potential, reflecting pathways to greatness.",
+            "Embrace AI to expand your mind and capabilities boundlessly.",
+            "AI heralds a new era of meaningful, impactful human work.",
+            "As AI understands us, we're stepping into a brighter, AI-enhanced future."
         ]
         
 
@@ -81,18 +81,19 @@ class ViralTweetGenerator:
 
             
             # Create prompt for DeepSeek
-            prompt = f"""You're an expert viral content creator specializing in AI topics. Create a single, cohesive tweet that naturally incorporates:
+            prompt = f"""You're an expert viral content creator specializing in AI topics. Create a single, cohesive tweet in Japanese that naturally incorporates:
 - Hook: {hook}
 - Emotion: {emotion}
 
 
 Requirements:
+- Output the tweet entirely in Japanese, ensuring it's natural and idiomatic
 - Weave these elements into natural, flowing text without using labels like '**HOOK:**'
-- Add 2-3 relevant hashtags at the end
+- Add 2-3 relevant hashtags at the end (in English or Japanese as appropriate)
 - STRICTLY NO special characters: no asterisks (*), no quotation marks ("), no markdown formatting
 - Do not mention any specific papers or models without providing their names
-- Keep entire tweet under 280 characters
-- Make it engaging, informative, and shareable
+- Keep entire tweet under 280 characters (note: Japanese characters count as one each)
+- Make it engaging, informative, and shareable for Japanese audience
 - Include emojis only if they enhance clarity or energy
 - Do not include any call to action
 - Use simple punctuation only: periods, commas, exclamation marks, question marks"""
