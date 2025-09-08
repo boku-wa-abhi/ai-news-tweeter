@@ -1,4 +1,4 @@
-name: YouTube AI Tweet Generator
+name: CSV AI Safety Tweet Generator
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  youtube-ai-tweet:
+  csv-ai-safety-tweet:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,25 +32,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate and Post YouTube AI Tweet
+      - name: Generate and Post CSV AI Safety Tweet
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          TINYURL_API_KEY: ${{ secrets.TINYURL_API_KEY }}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
           TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
-        run: python youtube_tweet_generator.py
+        run: python csv_tweet_generator.py
 
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: youtube-ai-tweet-logs-${{ github.run_number }}
+          name: csv-ai-safety-tweet-logs-${{ github.run_number }}
           path: |
             *.log
-          retention-days: 7
-
-      - name: Notify on failure
-        if: failure()
-        run: echo "YouTube AI tweet generation failed. Check the logs for details."
+            logs/
+          retention-days: 30

@@ -17,7 +17,5 @@ retrying==1.3.4
 # For environment variable management (optional)
 python-dotenv==1.0.0
 
-# For AI/LLM API calls
+# For AI/LLM API calls (used by viral tweet generator)
 openai==1.55.3
-youtube-search-python==1.6.6
-youtube-transcript-api==0.6.1

@@ -8,7 +8,7 @@ An automated Python system that fetches the latest AI/LLM news, summarizes artic
 - **AI-Powered Summarization**: Uses DeepSeek API to create concise, engaging summaries
 - **Smart Tweet Formatting**: Automatically formats tweets with hashtags and URLs (≤280 characters)
 - **Viral Tweet Generation**: Creates engaging, viral-style tweets about AI topics
-- **YouTube Content Integration**: Searches YouTube for AI videos, extracts transcripts, and generates tweets with shortened links
+- **CSV-Based Tweet Scheduling**: Posts pre-written AI safety and governance tweets based on scheduled dates
 - **Duplicate Prevention**: Tracks posted articles to avoid duplicates
 - **Scheduled Automation**: Runs daily via GitHub Actions
 - **Comprehensive Logging**: Tracks all activities and posted tweets
@@ -23,14 +23,14 @@ ai-news-tweeter/
 ├── tweet_formatter.py          # Summarizes and formats tweets
 ├── tweet_poster.py             # Posts tweets to Twitter
 ├── viral_tweet_generator.py    # Generates viral AI-related tweets
-├── youtube_tweet_generator.py  # Generates tweets from YouTube AI videos
+├── csv_tweet_generator.py      # Posts scheduled tweets from CSV data
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Example environment variables
 ├── .github/
 │   └── workflows/
 │       ├── tweet.yml           # GitHub Actions workflow for news tweets
 │       ├── viral_tweet.yml     # GitHub Actions workflow for viral tweets
-│       └── youtube_tweet.yml   # GitHub Actions workflow for YouTube tweets
+│       └── csv_tweet.yml       # GitHub Actions workflow for CSV-based tweets
 ├── .gitignore                  # Git ignore file
 └── README.md                   # This file
 ```
@@ -123,8 +123,8 @@ python main_1.py
 # For viral tweets only
 python -c "from viral_tweet_generator import ViralTweetGenerator, main; main()"
 
-# For YouTube-based tweets only
-python youtube_tweet_generator.py
+# For CSV-based scheduled tweets
+python csv_tweet_generator.py
 ```
 
 ## 🔄 How It Works
@@ -146,14 +146,12 @@ python youtube_tweet_generator.py
 4. **Character Limit Check**: Ensures the tweet is within Twitter's 280 character limit
 5. **Publishing**: Posts the viral tweet to Twitter and logs the activity
 
-### YouTube Tweet Generation
+### CSV-Based Tweet Generation
 
-1. **Video Search**: Searches YouTube for AI/LLM-related videos using targeted keywords
-2. **Transcript Extraction**: Downloads English transcripts from selected videos
-3. **Content Summarization**: Uses DeepSeek API to create viral-style tweets incorporating specific AI keywords
-4. **URL Shortening**: Shortens YouTube URLs using TinyURL API for cleaner tweets
-5. **Tweet Formatting**: Ensures tweets are ≤280 characters with relevant hashtags
-6. **Publishing**: Posts the YouTube-based tweet to Twitter and logs the activity
+1. **Date Matching**: Checks current date against CSV data entries
+2. **Content Retrieval**: Retrieves pre-written tweet content for the current date
+3. **Tweet Validation**: Ensures tweet content is within Twitter's character limits
+4. **Publishing**: Posts the scheduled tweet to Twitter and logs the activity
 
 ## 📊 News Sources
 
@@ -188,7 +186,7 @@ The system uses a comprehensive list of AI-related keywords to filter articles, 
 The system runs automatically via GitHub Actions:
 - **News Tweets**: Daily at 6:00 AM JST (21:00 UTC previous day)
 - **Viral Tweets**: Daily at 12:00 PM JST (03:00 UTC)
-- **YouTube Tweets**: Daily at 6:00 AM JST (21:00 UTC previous day)
+- **CSV Scheduled Tweets**: Daily at 6:00 AM JST (21:00 UTC previous day)
 
 You can also trigger any workflow manually from the GitHub Actions tab using the workflow_dispatch event.
 
@@ -309,17 +307,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
    - Leverages DeepSeek API for natural language generation
    - Ensures tweets are within character limits
 
-5. **YouTubeTweetGenerator (`youtube_tweet_generator.py`)**
-   - Searches YouTube for AI/LLM-related videos
-   - Extracts transcripts from videos
-   - Generates viral-style tweets with specific AI keywords
-   - Shortens URLs using TinyURL API
-   - Handles fallbacks for API failures
+5. **CSVTweetGenerator (`csv_tweet_generator.py`)**
+   - Reads pre-written tweets from CSV file
+   - Matches tweets to current date
+   - Posts scheduled AI safety and governance content
+   - Handles missing dates gracefully
 
 6. **Main Orchestrators**
    - `main.py`: Orchestrates news tweet generation
    - `main_1.py`: Orchestrates both news and viral tweet generation
-   - `youtube_tweet_generator.py`: Standalone YouTube tweet generation
+   - `csv_tweet_generator.py`: Standalone CSV-based tweet generation
 
 ### Implementation Details
 
