@@ -1,5 +1,3 @@
-
-
 # 🤖 AI News Tweeter
 
 
