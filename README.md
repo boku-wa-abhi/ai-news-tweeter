@@ -5,9 +5,6 @@ An automated Python system that fetches the latest AI/LLM news, summarizes artic
 
 ## 🚀 Features
 
-
-
-
 - **Automated News Fetching**: Fetches AI/LLM news from reputable sources via NewsAPI
 - **AI-Powered Summarization**: Uses DeepSeek API to create concise, engaging summaries
 - **Smart Tweet Formatting**: Automatically formats tweets with hashtags and URLs (≤280 characters)
