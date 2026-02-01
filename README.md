@@ -139,6 +139,8 @@ python csv_tweet_generator.py
 5. **Tweet Formatting**: Formats content with hashtags, preserves original URLs for rich link previews, and ensures ≤280 characters
 6. **Publishing**: Posts tweets to Twitter and logs the activity
 
+
+
 ### Viral Tweet Generation
 
 1. **Hook Selection**: Randomly selects from a curated list of attention-grabbing AI-related hooks
