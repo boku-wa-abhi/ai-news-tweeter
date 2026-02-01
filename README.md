@@ -16,6 +16,8 @@ An automated Python system that fetches the latest AI/LLM news, summarizes artic
 
 ## 📁 Project Structure
 
+
+
 ```
 ai-news-tweeter/
 ├── main.py                     # Main orchestrator script for news tweets
