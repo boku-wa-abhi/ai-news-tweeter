@@ -3,7 +3,6 @@
 An automated Python system that fetches the latest AI/LLM news, summarizes articles using DeepSeek API, and posts engaging tweets using GitHub Actions. The system also includes a viral tweet generator that creates attention-grabbing AI-related tweets.
 
 ## 🚀 Features
-
 - **Automated News Fetching**: Fetches AI/LLM news from reputable sources via NewsAPI
 - **AI-Powered Summarization**: Uses DeepSeek API to create concise, engaging summaries
 - **Smart Tweet Formatting**: Automatically formats tweets with hashtags and URLs (≤280 characters)
@@ -14,8 +13,6 @@ An automated Python system that fetches the latest AI/LLM news, summarizes artic
 - **Comprehensive Logging**: Tracks all activities and posted tweets
 
 ## 📁 Project Structure
-
-
 
 ```
 ai-news-tweeter/
