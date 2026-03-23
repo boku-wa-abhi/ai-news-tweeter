@@ -1,0 +1,35 @@
+digraph architecture {
+	rankdir=TB size="6,6"
+	subgraph cluster_0 {
+		color=blue label="Data Collection" style=dashed
+		A [label="SEC EDGAR API
+(Official Filing Database)" fillcolor="#e1f5ff" shape=box style=filled]
+	}
+	subgraph cluster_1 {
+		color=grey label=Processing style=dashed
+		B [label="Filing Extraction
+(CIK-based retrieval)" shape=box]
+		C [label="Data Preparation
+(Text extraction & cleaning)" shape=box]
+	}
+	subgraph cluster_2 {
+		color=orange label=Intelligence style=dashed
+		D [label="Large Language Model
+(DeepSeek, GPT-4, Claude)" fillcolor="#fff4e1" shape=box style=filled]
+		E [label="Analysis Engine
+(Summarization & insights)" shape=box]
+	}
+	subgraph cluster_3 {
+		color=green label=Output style=dashed
+		F [label="Structured Results
+(Summary + Key Points)" fillcolor="#e8f5e9" shape=box style=filled]
+		G [label="Delivery
+(Text, JSON, API)" shape=box]
+	}
+	A -> B [label="Filing data"]
+	B -> C [label="Filtered filings"]
+	C -> D [label="Prepared text"]
+	D -> E [label="AI processing"]
+	E -> F [label="Analyzed content"]
+	F -> G [label="Multiple formats"]
+}
